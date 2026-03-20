@@ -1,0 +1,25 @@
+.user-list-page {
+  .page-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
+    h1 { margin: 0; font-weight: 400; }
+    .header-actions { display: flex; gap: 16px; align-items: center; }
+  }
+}
+.search-field { width: 250px; }
+.table-container { border-radius: 12px; overflow: hidden; background: white; table { width: 100%; } }
+.no-data { text-align: center; padding: 32px !important; color: #888; }
+
+.role-badge {
+  display: inline-block; padding: 4px 12px; border-radius: 16px;
+  font-size: 11px; font-weight: 600;
+  &.role-admin { background: #e8eaf6; color: #283593; }
+  &.role-manager { background: #fff3e0; color: #e65100; }
+  &.role-employee { background: #e8f5e9; color: #2e7d32; }
+}
+
+.status-dot {
+  font-size: 13px;
+  &.active { color: #4caf50; }
+  &.inactive { color: #f44336; }
+}

@@ -1,0 +1,7 @@
+.holiday-list-page {
+  .page-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; h1 { margin: 0; font-weight: 400; }
+  }
+}
+.table-container { border-radius: 12px; overflow: hidden; background: white; table { width: 100%; } }

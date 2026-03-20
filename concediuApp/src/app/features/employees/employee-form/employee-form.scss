@@ -1,0 +1,8 @@
+.employee-form-page {
+  max-width: 700px;
+  h1 { margin-bottom: 24px; font-weight: 400; }
+}
+.form-card { border-radius: 12px !important; padding: 16px; }
+.full-width { width: 100%; }
+.row { display: flex; gap: 16px; mat-form-field { flex: 1; } }
+.form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }

@@ -1,0 +1,38 @@
+<div class="holiday-list-page">
+  <div class="page-header">
+    <h1>Sărbători Legale</h1>
+    <button mat-raised-button color="primary" routerLink="/holidays/new">
+      <mat-icon>add</mat-icon> Adaugă Sărbătoare
+    </button>
+  </div>
+
+  <div class="table-container mat-elevation-z2">
+    <table mat-table [dataSource]="holidays()">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Denumire</th>
+        <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+      </ng-container>
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Data</th>
+        <td mat-cell *matCellDef="let row">{{ row.date | date: 'dd MMMM yyyy' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="recurring">
+        <th mat-header-cell *matHeaderCellDef>Recurentă</th>
+        <td mat-cell *matCellDef="let row">{{ row.recurring ? 'Da' : 'Nu' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Acțiuni</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button matTooltip="Editează" [routerLink]="['/holidays', row._id, 'edit']">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Șterge" color="warn" (click)="delete(row._id)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+</div>

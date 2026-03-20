@@ -1,0 +1,202 @@
+<div class="dashboard">
+  <h1>Bine ai venit, {{ user()?.firstName }}!</h1>
+
+  <div class="dashboard-grid">
+    <!-- Leave Balance Card -->
+    @if (balance()) {
+      <mat-card class="balance-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>event_available</mat-icon>
+          <mat-card-title>Soldul Concediului</mat-card-title>
+          <mat-card-subtitle>Anul {{ balance()!.year }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="balance-breakdown">
+            <div class="breakdown-row">
+              <span>Zile {{ balance()!.year }}</span>
+              <strong>{{ balance()!.currentYearDays }}</strong>
+            </div>
+            @if (balance()!.carryoverDays > 0) {
+              <div class="breakdown-row carryover">
+                <span>Reportate din {{ balance()!.year - 1 }}</span>
+                <strong>+{{ balance()!.carryoverDays }}</strong>
+              </div>
+            }
+            <div class="breakdown-row total">
+              <span>Total disponibil</span>
+              <strong>{{ balance()!.totalDays }}</strong>
+            </div>
+          </div>
+
+          <div class="balance-stats">
+            <div class="stat used">
+              <span class="stat-value">{{ balance()!.usedDays }}</span>
+              <span class="stat-label">Utilizate</span>
+            </div>
+            <div class="stat pending">
+              <span class="stat-value">{{ balance()!.pendingDays }}</span>
+              <span class="stat-label">In așteptare</span>
+            </div>
+            <div class="stat remaining">
+              <span class="stat-value">{{ balance()!.availableDays }}</span>
+              <span class="stat-label">Disponibile</span>
+            </div>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="usagePercent()"></mat-progress-bar>
+          <small class="usage-text">{{ usagePercent() }}% utilizat</small>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary" routerLink="/leaves/create">
+            <mat-icon>add</mat-icon> Cerere nouă
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
+
+    <!-- Stats Card (admin/manager) -->
+    @if (stats()) {
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>assessment</mat-icon>
+          <mat-card-title>Statistici</mat-card-title>
+          <mat-card-subtitle>{{ stats()!.year }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="balance-stats">
+            <div class="stat pending">
+              <span class="stat-value">{{ stats()!.pending }}</span>
+              <span class="stat-label">In așteptare</span>
+            </div>
+            <div class="stat approved">
+              <span class="stat-value">{{ stats()!.approved }}</span>
+              <span class="stat-label">Aprobate</span>
+            </div>
+            <div class="stat rejected">
+              <span class="stat-value">{{ stats()!.rejected }}</span>
+              <span class="stat-label">Respinse</span>
+            </div>
+            <div class="stat cancelled">
+              <span class="stat-value">{{ stats()!.cancelled }}</span>
+              <span class="stat-label">Anulate</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- On Leave Today -->
+      @if (stats()!.onLeaveToday.length > 0) {
+        <mat-card class="on-leave-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>flight_takeoff</mat-icon>
+            <mat-card-title>In concediu azi</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-list>
+              @for (person of stats()!.onLeaveToday; track person.name) {
+                <mat-list-item>
+                  <mat-icon matListItemIcon>person</mat-icon>
+                  <span matListItemTitle>{{ person.name }}</span>
+                  <span matListItemLine>Până la {{ person.endDate | date: 'dd MMM yyyy' }}</span>
+                </mat-list-item>
+              }
+            </mat-list>
+          </mat-card-content>
+        </mat-card>
+      }
+    }
+
+    <!-- All Employees Balances (admin/manager) -->
+    @if (allBalances().length > 0) {
+      <mat-card class="team-balance-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>groups</mat-icon>
+          <mat-card-title>Zile Concediu Angajați</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="team-table-container">
+            <table mat-table [dataSource]="allBalances()">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Angajat</th>
+                <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="department">
+                <th mat-header-cell *matHeaderCellDef>Departament</th>
+                <td mat-cell *matCellDef="let row">{{ row.department }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="totalDays">
+                <th mat-header-cell *matHeaderCellDef>Total</th>
+                <td mat-cell *matCellDef="let row">
+                  {{ row.totalDays }}
+                  @if (row.carryoverDays > 0) {
+                    <small class="carryover-hint">(+{{ row.carryoverDays }} reportate)</small>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="usedDays">
+                <th mat-header-cell *matHeaderCellDef>Utilizate</th>
+                <td mat-cell *matCellDef="let row" class="used-cell">{{ row.usedDays }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="pendingDays">
+                <th mat-header-cell *matHeaderCellDef>In așteptare</th>
+                <td mat-cell *matCellDef="let row" class="pending-cell">{{ row.pendingDays }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="availableDays">
+                <th mat-header-cell *matHeaderCellDef>Disponibile</th>
+                <td mat-cell *matCellDef="let row" class="available-cell">
+                  <strong>{{ row.availableDays }}</strong>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="balanceColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: balanceColumns"></tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Recent Leaves -->
+    <mat-card class="recent-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>history</mat-icon>
+        <mat-card-title>Cereri Recente</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (recentLeaves().length === 0) {
+          <p class="no-data">Nu aveți cereri de concediu.</p>
+        } @else {
+          <mat-list>
+            @for (leave of recentLeaves(); track leave._id) {
+              <mat-list-item>
+                <div
+                  matListItemIcon
+                  class="leave-color-dot"
+                  [style.background-color]="leave.leaveType?.color"
+                ></div>
+                <span matListItemTitle>
+                  {{ leave.leaveType?.name }} - {{ leave.workingDays }} zile
+                </span>
+                <span matListItemLine>
+                  {{ leave.startDate | date: 'dd MMM' }} - {{ leave.endDate | date: 'dd MMM yyyy' }}
+                </span>
+                <mat-chip-set matListItemMeta>
+                  <mat-chip [highlighted]="leave.status === 'approved'">
+                    {{ getStatusLabel(leave.status) }}
+                  </mat-chip>
+                </mat-chip-set>
+              </mat-list-item>
+            }
+          </mat-list>
+        }
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button color="primary" routerLink="/leaves">Vezi toate</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>
