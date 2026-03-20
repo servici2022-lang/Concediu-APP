@@ -1,55 +1,27 @@
 <div class="login-container">
-  <mat-card class="login-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon class="login-icon">beach_access</mat-icon>
-        <span>Concediu App</span>
-      </mat-card-title>
-      <mat-card-subtitle>Autentificare</mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content>
+  <nb-card class="login-card">
+    <nb-card-header>
+      <div class="login-header">
+        <nb-icon icon="umbrella-outline" status="primary"></nb-icon>
+        <h4>Concediu App</h4>
+        <p>Autentificare</p>
+      </div>
+    </nb-card-header>
+    <nb-card-body>
       @if (error()) {
-        <div class="error-message">{{ error() }}</div>
+        <nb-alert status="danger" closable (close)="error.set('')">{{ error() }}</nb-alert>
       }
-
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput formControlName="email" type="email" placeholder="email@exemplu.ro" />
-          <mat-icon matSuffix>email</mat-icon>
-          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
-            <mat-error>Email-ul este obligatoriu</mat-error>
-          }
-          @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
-            <mat-error>Email invalid</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Parolă</mat-label>
-          <input
-            matInput
-            formControlName="password"
-            [type]="hidePassword() ? 'password' : 'text'"
-            placeholder="Introduceți parola"
-          />
-          <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())">
-            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
-            <mat-error>Parola este obligatorie</mat-error>
-          }
-        </mat-form-field>
-
-        <button mat-raised-button color="primary" type="submit" class="full-width login-btn" [disabled]="loading()">
-          @if (loading()) {
-            <mat-spinner diameter="20"></mat-spinner>
-          } @else {
-            Autentificare
-          }
-        </button>
+        <div class="form-group">
+          <label class="label">Email</label>
+          <input nbInput fullWidth formControlName="email" type="email" placeholder="email@exemplu.ro" />
+        </div>
+        <div class="form-group">
+          <label class="label">Parola</label>
+          <input nbInput fullWidth formControlName="password" [type]="hidePassword() ? 'password' : 'text'" placeholder="Introduceti parola" />
+        </div>
+        <button nbButton fullWidth status="primary" size="large" type="submit" [disabled]="form.invalid || loading()" [nbSpinner]="loading()" nbSpinnerStatus="control">Autentificare</button>
       </form>
-    </mat-card-content>
-  </mat-card>
+    </nb-card-body>
+  </nb-card>
 </div>

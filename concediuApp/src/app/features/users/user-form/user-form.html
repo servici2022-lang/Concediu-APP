@@ -1,61 +1,13 @@
-<div class="user-form-page">
-  <h1>{{ isEdit() ? 'Editare' : 'Adăugare' }} Utilizator</h1>
-
-  <mat-card class="form-card">
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="row">
-          <mat-form-field appearance="outline">
-            <mat-label>Prenume</mat-label>
-            <input matInput formControlName="firstName" />
-            <mat-error>Prenumele este obligatoriu</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Nume</mat-label>
-            <input matInput formControlName="lastName" />
-            <mat-error>Numele este obligatoriu</mat-error>
-          </mat-form-field>
-        </div>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput formControlName="email" type="email" />
-          <mat-error>Email valid obligatoriu</mat-error>
-        </mat-form-field>
-
-        @if (!isEdit()) {
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Parolă</mat-label>
-            <input matInput formControlName="password" type="password" />
-            <mat-error>Parola trebuie să aibă minim 8 caractere</mat-error>
-          </mat-form-field>
-        }
-
-        <div class="row">
-          <mat-form-field appearance="outline">
-            <mat-label>Rol</mat-label>
-            <mat-select formControlName="role">
-              <mat-option value="employee">Angajat</mat-option>
-              <mat-option value="manager">Manager</mat-option>
-              <mat-option value="admin">Administrator</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          @if (isEdit()) {
-            <div class="toggle-field">
-              <mat-slide-toggle formControlName="isActive">Cont activ</mat-slide-toggle>
-            </div>
-          }
-        </div>
-
-        <div class="form-actions">
-          <button mat-button type="button" routerLink="/users">Anulează</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || loading()">
-            <mat-icon>save</mat-icon> {{ isEdit() ? 'Salvează' : 'Creează' }}
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-</div>
+<h4>{{ isEdit() ? 'Editare' : 'Adaugare' }} Utilizator</h4>
+<nb-card class="form-card"><nb-card-body>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="row"><div class="form-group"><label class="label">Prenume</label><input nbInput fullWidth formControlName="firstName" /></div><div class="form-group"><label class="label">Nume</label><input nbInput fullWidth formControlName="lastName" /></div></div>
+    <div class="form-group"><label class="label">Email</label><input nbInput fullWidth formControlName="email" type="email" /></div>
+    @if (!isEdit()) { <div class="form-group"><label class="label">Parola</label><input nbInput fullWidth formControlName="password" type="password" /></div> }
+    <div class="row">
+      <div class="form-group"><label class="label">Rol</label><nb-select fullWidth formControlName="role"><nb-option value="employee">Angajat</nb-option><nb-option value="manager">Manager</nb-option><nb-option value="admin">Administrator</nb-option></nb-select></div>
+      @if (isEdit()) { <div class="form-group" style="padding-top:24px"><nb-toggle formControlName="isActive">Cont activ</nb-toggle></div> }
+    </div>
+    <div class="form-actions"><button nbButton ghost routerLink="/users" type="button">Anuleaza</button><button nbButton status="primary" type="submit" [disabled]="form.invalid || loading()"><nb-icon icon="save-outline"></nb-icon> {{ isEdit() ? 'Salveaza' : 'Creeaza' }}</button></div>
+  </form>
+</nb-card-body></nb-card>

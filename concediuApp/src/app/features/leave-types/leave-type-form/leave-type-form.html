@@ -1,41 +1,14 @@
-<div class="leave-type-form-page">
-  <h1>{{ isEdit() ? 'Editare' : 'Adăugare' }} Tip Concediu</h1>
-  <mat-card class="form-card">
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Denumire</mat-label>
-          <input matInput formControlName="name" />
-          <mat-error>Denumirea este obligatorie</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Descriere</mat-label>
-          <textarea matInput formControlName="description" rows="2"></textarea>
-        </mat-form-field>
-
-        <div class="row">
-          <mat-form-field appearance="outline">
-            <mat-label>Culoare</mat-label>
-            <input matInput formControlName="color" type="color" />
-          </mat-form-field>
-        </div>
-
-        <div class="toggles">
-          <mat-slide-toggle formControlName="isPaid">Plătit</mat-slide-toggle>
-          <mat-slide-toggle formControlName="deductsFromAllowance">Se scade din zile disponibile</mat-slide-toggle>
-          @if (isEdit()) {
-            <mat-slide-toggle formControlName="isActive">Activ</mat-slide-toggle>
-          }
-        </div>
-
-        <div class="form-actions">
-          <button mat-button type="button" routerLink="/leave-types">Anulează</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || loading()">
-            <mat-icon>save</mat-icon> {{ isEdit() ? 'Salvează' : 'Creează' }}
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-</div>
+<h4>{{ isEdit() ? 'Editare' : 'Adaugare' }} Tip Concediu</h4>
+<nb-card class="form-card"><nb-card-body>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-group"><label class="label">Denumire</label><input nbInput fullWidth formControlName="name" /></div>
+    <div class="form-group"><label class="label">Descriere</label><textarea nbInput fullWidth formControlName="description" rows="2"></textarea></div>
+    <div class="form-group"><label class="label">Culoare</label><input nbInput formControlName="color" type="color" /></div>
+    <div style="display:flex;flex-direction:column;gap:16px;margin:16px 0">
+      <nb-toggle formControlName="isPaid">Platit</nb-toggle>
+      <nb-toggle formControlName="deductsFromAllowance">Se scade din zile</nb-toggle>
+      @if (isEdit()) { <nb-toggle formControlName="isActive">Activ</nb-toggle> }
+    </div>
+    <div class="form-actions"><button nbButton ghost routerLink="/leave-types" type="button">Anuleaza</button><button nbButton status="primary" type="submit" [disabled]="form.invalid || loading()"><nb-icon icon="save-outline"></nb-icon> {{ isEdit() ? 'Salveaza' : 'Creeaza' }}</button></div>
+  </form>
+</nb-card-body></nb-card>

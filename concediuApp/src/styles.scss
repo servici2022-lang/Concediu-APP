@@ -1,29 +1,65 @@
-@use '@angular/material' as mat;
+@import '@nebular/theme/styles/prebuilt/cosmic';
 
-html {
-  height: 100%;
-  @include mat.theme(
-    (
-      color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
-      ),
-      typography: Roboto,
-      density: 0,
-    )
-  );
-}
-
-body {
-  color-scheme: light;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
+html, body {
   margin: 0;
+  padding: 0;
   height: 100%;
+  font-family: 'Open Sans', sans-serif;
 }
 
-// Common utility classes
-.ngClass {
-  // needed for Angular ngClass directive
+nb-card {
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
 }
+
+nb-card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+}
+
+a, button { transition: all 0.2s ease; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+
+.data-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.45); font-weight: 600; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); white-space: nowrap; }
+  td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.875rem; }
+  tbody tr { transition: background 0.15s ease; &:hover { background: rgba(255,255,255,0.03); } }
+}
+
+.status-badge {
+  display: inline-flex; align-items: center; padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+  &.status-pending { background: rgba(255,170,0,0.12); color: #ffaa00; }
+  &.status-approved { background: rgba(0,214,143,0.12); color: #00d68f; }
+  &.status-rejected { background: rgba(255,61,113,0.12); color: #ff3d71; }
+  &.status-cancelled { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+}
+
+.role-badge {
+  display: inline-flex; padding: 4px 14px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em;
+  &.role-admin { background: rgba(89,139,255,0.15); color: #598bff; }
+  &.role-manager { background: rgba(255,170,0,0.15); color: #ffaa00; }
+  &.role-employee { background: rgba(0,214,143,0.15); color: #00d68f; }
+}
+
+.leave-type-chip { display: inline-flex; padding: 4px 14px; border-radius: 20px; color: white; font-size: 0.75rem; font-weight: 600; }
+
+.page-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+  h4 { margin: 0; font-weight: 600; }
+  .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+}
+
+.form-group { margin-bottom: 1.25rem; }
+.label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.8rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.04em; }
+.row { display: flex; gap: 1rem; .form-group { flex: 1; } }
+.form-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
+.form-card { margin-top: 1rem; }
+.active { color: #00d68f; }
+.inactive { color: #ff3d71; }
+.no-data { text-align: center; padding: 2rem; color: rgba(255,255,255,0.35); }
+.color-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; }

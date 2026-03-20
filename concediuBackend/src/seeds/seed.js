@@ -59,13 +59,6 @@ const defaultLeaveTypes = [
     isPaid: true,
     deductsFromAllowance: false,
   },
-  {
-    name: 'Work from Home',
-    description: 'Lucru de acasă',
-    color: '#607d8b',
-    isPaid: true,
-    deductsFromAllowance: false,
-  },
 ];
 
 const seed = async () => {

@@ -1,61 +1,29 @@
-<div class="profile-page">
-  <h1>Profilul Meu</h1>
-
-  <div class="profile-grid">
-    <mat-card class="info-card">
-      <mat-card-header>
-        <mat-icon mat-card-avatar>person</mat-icon>
-        <mat-card-title>{{ user()?.firstName }} {{ user()?.lastName }}</mat-card-title>
-        <mat-card-subtitle>{{ user()?.email }}</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        @if (employee()) {
-          <div class="info-row"><strong>Departament:</strong> {{ employee()!.department }}</div>
-          <div class="info-row"><strong>Funcție:</strong> {{ employee()!.position }}</div>
-          <div class="info-row"><strong>Telefon:</strong> {{ employee()!.phone || '-' }}</div>
-        }
-      </mat-card-content>
-    </mat-card>
-
-    @if (balance()) {
-      <mat-card class="balance-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar>event_available</mat-icon>
-          <mat-card-title>Sold Concediu {{ balance()!.year }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="balance-grid">
-            <div><strong>{{ balance()!.totalDays }}</strong><span>Total</span></div>
-            <div><strong>{{ balance()!.usedDays }}</strong><span>Utilizate</span></div>
-            <div><strong>{{ balance()!.pendingDays }}</strong><span>In așteptare</span></div>
-            <div><strong>{{ balance()!.availableDays }}</strong><span>Disponibile</span></div>
-          </div>
-          <mat-progress-bar mode="determinate" [value]="(balance()!.usedDays / balance()!.totalDays) * 100"></mat-progress-bar>
-        </mat-card-content>
-      </mat-card>
-    }
-
-    <mat-card class="password-card">
-      <mat-card-header>
-        <mat-icon mat-card-avatar>lock</mat-icon>
-        <mat-card-title>Schimbare Parolă</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Parola curentă</mat-label>
-            <input matInput formControlName="currentPassword" type="password" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Parola nouă</mat-label>
-            <input matInput formControlName="newPassword" type="password" />
-            <mat-error>Minim 8 caractere</mat-error>
-          </mat-form-field>
-          <button mat-raised-button color="primary" type="submit" [disabled]="passwordForm.invalid || loading()">
-            Schimbă Parola
-          </button>
-        </form>
-      </mat-card-content>
-    </mat-card>
-  </div>
+<h4>Profilul Meu</h4>
+<div class="pgrid">
+  <nb-card>
+    <nb-card-header><nb-icon icon="person-outline" status="primary"></nb-icon> {{ user()?.firstName }} {{ user()?.lastName }}</nb-card-header>
+    <nb-card-body>
+      <p>{{ user()?.email }}</p>
+      @if (employee()) { <div class="irow"><strong>Departament:</strong> {{ employee()!.department }}</div><div class="irow"><strong>Functie:</strong> {{ employee()!.position }}</div><div class="irow"><strong>Telefon:</strong> {{ employee()!.phone || '-' }}</div> }
+    </nb-card-body>
+  </nb-card>
+  @if (balance()) {
+    <nb-card>
+      <nb-card-header><nb-icon icon="calendar-outline" status="primary"></nb-icon> Sold {{ balance()!.year }}</nb-card-header>
+      <nb-card-body>
+        <div class="bgrid"><div><strong>{{ balance()!.totalDays }}</strong><span>Total</span></div><div><strong>{{ balance()!.usedDays }}</strong><span>Utilizate</span></div><div><strong>{{ balance()!.pendingDays }}</strong><span>In asteptare</span></div><div><strong>{{ balance()!.availableDays }}</strong><span>Disponibile</span></div></div>
+        <nb-progress-bar [value]="balance()!.totalDays > 0 ? (balance()!.usedDays / balance()!.totalDays) * 100 : 0" status="primary" size="tiny"></nb-progress-bar>
+      </nb-card-body>
+    </nb-card>
+  }
+  <nb-card>
+    <nb-card-header><nb-icon icon="lock-outline" status="primary"></nb-icon> Schimbare Parola</nb-card-header>
+    <nb-card-body>
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <div class="form-group"><label class="label">Parola curenta</label><input nbInput fullWidth formControlName="currentPassword" type="password" /></div>
+        <div class="form-group"><label class="label">Parola noua</label><input nbInput fullWidth formControlName="newPassword" type="password" /></div>
+        <button nbButton status="primary" type="submit" [disabled]="passwordForm.invalid || loading()">Schimba Parola</button>
+      </form>
+    </nb-card-body>
+  </nb-card>
 </div>

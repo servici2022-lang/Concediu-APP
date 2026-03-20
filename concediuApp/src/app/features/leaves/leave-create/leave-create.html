@@ -1,76 +1,24 @@
-<div class="leave-create-page">
-  <h1>Cerere Nouă de Concediu</h1>
-
-  <mat-card class="form-card">
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Tip Concediu</mat-label>
-          <mat-select formControlName="leaveTypeId">
-            @for (type of leaveTypes(); track type._id) {
-              <mat-option [value]="type._id">
-                <span class="type-dot" [style.background-color]="type.color"></span>
-                {{ type.name }}
-                @if (!type.isPaid) { (fără plată) }
-              </mat-option>
-            }
-          </mat-select>
-          <mat-error>Selectați tipul de concediu</mat-error>
-        </mat-form-field>
-
-        <div class="date-row">
-          <mat-form-field appearance="outline">
-            <mat-label>Data început</mat-label>
-            <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
-            <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
-            <mat-datepicker #startPicker></mat-datepicker>
-            <mat-error>Data de început este obligatorie</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Data sfârșit</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
-            <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
-            <mat-datepicker #endPicker></mat-datepicker>
-            <mat-error>Data de sfârșit este obligatorie</mat-error>
-          </mat-form-field>
-        </div>
-
-        @if (workingDays() !== null) {
-          <div class="working-days-info">
-            <mat-icon>event_available</mat-icon>
-            <strong>{{ workingDays() }}</strong> zile lucrătoare
-          </div>
-        }
-        @if (calculating()) {
-          <div class="working-days-info">
-            <mat-icon>hourglass_empty</mat-icon>
-            Se calculează...
-          </div>
-        }
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Motiv (opțional)</mat-label>
-          <textarea matInput formControlName="reason" rows="3" maxlength="500"></textarea>
-          <mat-hint align="end">{{ form.get('reason')?.value?.length || 0 }}/500</mat-hint>
-        </mat-form-field>
-
-        <div class="form-actions">
-          <button mat-button type="button" routerLink="/leaves">Anulează</button>
-          <button
-            mat-raised-button
-            color="primary"
-            type="submit"
-            [disabled]="form.invalid || loading()"
-          >
-            @if (loading()) {
-              <mat-spinner diameter="20"></mat-spinner>
-            } @else {
-              <ng-container><mat-icon>send</mat-icon> Trimite Cererea</ng-container>
-            }
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-</div>
+<h4>Cerere Noua de Concediu</h4>
+<nb-card class="form-card">
+  <nb-card-body>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label class="label">Tip Concediu</label>
+        <nb-select fullWidth formControlName="leaveTypeId" placeholder="Selecteaza">
+          @for (t of leaveTypes(); track t._id) { <nb-option [value]="t._id">{{ t.name }}</nb-option> }
+        </nb-select>
+      </div>
+      <div class="row">
+        <div class="form-group"><label class="label">Data inceput</label><input nbInput fullWidth formControlName="startDate" [nbDatepicker]="sp" /><nb-datepicker #sp></nb-datepicker></div>
+        <div class="form-group"><label class="label">Data sfarsit</label><input nbInput fullWidth formControlName="endDate" [nbDatepicker]="ep" /><nb-datepicker #ep></nb-datepicker></div>
+      </div>
+      @if (workingDays() !== null) { <div class="wd-info"><nb-icon icon="checkmark-circle-outline" status="success"></nb-icon> <strong>{{ workingDays() }}</strong> zile lucratoare</div> }
+      @if (calculating()) { <div class="wd-info"><nb-icon icon="clock-outline"></nb-icon> Se calculeaza...</div> }
+      <div class="form-group"><label class="label">Motiv (optional)</label><textarea nbInput fullWidth formControlName="reason" rows="3"></textarea></div>
+      <div class="form-actions">
+        <button nbButton ghost routerLink="/leaves" type="button">Anuleaza</button>
+        <button nbButton status="primary" type="submit" [disabled]="form.invalid || loading()" [nbSpinner]="loading()" nbSpinnerStatus="control"><nb-icon icon="paper-plane-outline"></nb-icon> Trimite</button>
+      </div>
+    </form>
+  </nb-card-body>
+</nb-card>

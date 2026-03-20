@@ -1,13 +1,6 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { NbCardModule, NbInputModule, NbButtonModule, NbIconModule, NbToastrService, NbProgressBarModule } from '@nebular/theme';
 import { AuthService } from '../../core/services/auth.service';
 import { UserService } from '../../core/services/user.service';
 import { EmployeeService } from '../../core/services/employee.service';
@@ -16,10 +9,7 @@ import { Employee, LeaveBalance } from '../../core/models';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [
-    ReactiveFormsModule, MatCardModule, MatFormFieldModule, MatInputModule,
-    MatButtonModule, MatIconModule, MatSnackBarModule, MatDividerModule, MatProgressBarModule,
-  ],
+  imports: [ReactiveFormsModule, NbCardModule, NbInputModule, NbButtonModule, NbIconModule, NbProgressBarModule],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
@@ -28,7 +18,7 @@ export class ProfileComponent implements OnInit {
   private userService = inject(UserService);
   private employeeService = inject(EmployeeService);
   private fb = inject(FormBuilder);
-  private snackBar = inject(MatSnackBar);
+  private toastr = inject(NbToastrService);
 
   user = this.auth.currentUser;
   employee = signal<Employee | null>(null);
@@ -43,7 +33,6 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     const userId = this.user()?.id;
     if (!userId) return;
-
     this.employeeService.getByUserId(userId).subscribe({
       next: (res) => {
         this.employee.set(res.data);
@@ -58,15 +47,8 @@ export class ProfileComponent implements OnInit {
     if (this.passwordForm.invalid) return;
     this.loading.set(true);
     this.userService.changePassword(this.passwordForm.value as any).subscribe({
-      next: () => {
-        this.snackBar.open('Parola a fost schimbată', 'OK', { duration: 3000 });
-        this.passwordForm.reset();
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.snackBar.open(err.error?.message || 'Eroare', 'OK', { duration: 3000 });
-      },
+      next: () => { this.toastr.success('Parola a fost schimbata', 'Succes'); this.passwordForm.reset(); this.loading.set(false); },
+      error: (err) => { this.loading.set(false); this.toastr.danger(err.error?.message || 'Eroare', 'Eroare'); },
     });
   }
 }

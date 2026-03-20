@@ -1,73 +1,7 @@
-.app-container {
-  height: 100vh;
+::ng-deep nb-layout-header nav {
+  display: flex !important;
+  justify-content: space-between !important;
+  width: 100% !important;
 }
-
-.app-sidenav {
-  width: 260px;
-  background: #fafafa;
-}
-
-.sidenav-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 16px;
-
-  .app-logo {
-    font-size: 32px;
-    width: 32px;
-    height: 32px;
-    color: #667eea;
-  }
-
-  .app-name {
-    font-size: 22px;
-    font-weight: 600;
-    color: #333;
-  }
-}
-
-.active-link {
-  background-color: rgba(102, 126, 234, 0.12) !important;
-  color: #667eea !important;
-
-  mat-icon {
-    color: #667eea !important;
-  }
-}
-
-.app-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.toolbar-spacer {
-  flex: 1 1 auto;
-}
-
-.main-content {
-  padding: 24px;
-  min-height: calc(100vh - 64px);
-  background: #f5f5f5;
-}
-
-.user-menu-header {
-  padding: 8px 16px;
-  line-height: 1.5;
-}
-
-.role-badge {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 2px 8px;
-  background: #667eea;
-  color: white;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-::ng-deep .mat-drawer-inner-container {
-  overflow-x: hidden;
-}
+.header-container { display: flex; align-items: center; gap: 12px; }
+.logo { display: flex; align-items: center; gap: 8px; font-size: 1.2rem; font-weight: 600; }

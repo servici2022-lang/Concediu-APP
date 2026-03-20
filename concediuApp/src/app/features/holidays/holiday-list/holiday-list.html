@@ -1,38 +1,7 @@
-<div class="holiday-list-page">
-  <div class="page-header">
-    <h1>Sărbători Legale</h1>
-    <button mat-raised-button color="primary" routerLink="/holidays/new">
-      <mat-icon>add</mat-icon> Adaugă Sărbătoare
-    </button>
-  </div>
-
-  <div class="table-container mat-elevation-z2">
-    <table mat-table [dataSource]="holidays()">
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Denumire</th>
-        <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-      </ng-container>
-      <ng-container matColumnDef="date">
-        <th mat-header-cell *matHeaderCellDef>Data</th>
-        <td mat-cell *matCellDef="let row">{{ row.date | date: 'dd MMMM yyyy' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="recurring">
-        <th mat-header-cell *matHeaderCellDef>Recurentă</th>
-        <td mat-cell *matCellDef="let row">{{ row.recurring ? 'Da' : 'Nu' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>Acțiuni</th>
-        <td mat-cell *matCellDef="let row">
-          <button mat-icon-button matTooltip="Editează" [routerLink]="['/holidays', row._id, 'edit']">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button mat-icon-button matTooltip="Șterge" color="warn" (click)="delete(row._id)">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-    </table>
-  </div>
-</div>
+<div class="page-header"><h4>Sarbatori Legale</h4><button nbButton status="primary" size="small" routerLink="/holidays/new"><nb-icon icon="plus-outline"></nb-icon> Adauga</button></div>
+<nb-card><nb-card-body>
+  <table class="data-table">
+    <thead><tr><th>Denumire</th><th>Data</th><th>Recurenta</th><th>Actiuni</th></tr></thead>
+    <tbody>@for (r of holidays(); track r._id) { <tr><td>{{ r.name }}</td><td>{{ r.date | date:'dd MMMM yyyy' }}</td><td>{{ r.recurring ? 'Da' : 'Nu' }}</td><td><button nbButton ghost size="tiny" [routerLink]="['/holidays', r._id, 'edit']"><nb-icon icon="edit-outline"></nb-icon></button><button nbButton ghost status="danger" size="tiny" (click)="delete(r._id)"><nb-icon icon="trash-2-outline"></nb-icon></button></td></tr> }</tbody>
+  </table>
+</nb-card-body></nb-card>

@@ -1,14 +1,4 @@
-.profile-page { h1 { margin-bottom: 24px; font-weight: 400; } }
-.profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; }
-.full-width { width: 100%; }
-.info-row { padding: 8px 0; border-bottom: 1px solid #eee; }
-mat-card { border-radius: 12px !important; }
-mat-card-header mat-icon[mat-card-avatar] {
-  font-size: 28px; width: 40px; height: 40px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(102,126,234,0.1); border-radius: 50%; color: #667eea;
-}
-.balance-grid {
-  display: flex; justify-content: space-around; margin: 16px 0; text-align: center;
-  div { display: flex; flex-direction: column; strong { font-size: 24px; } span { font-size: 12px; color: #888; } }
-}
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+nb-card-header { display: flex; align-items: center; gap: 8px; }
+.irow { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.bgrid { display: flex; justify-content: space-around; margin: 16px 0; text-align: center; div { display: flex; flex-direction: column; strong { font-size: 1.5rem; } span { font-size: 0.7rem; opacity: 0.5; } } }

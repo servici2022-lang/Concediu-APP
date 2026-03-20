@@ -1,80 +1,11 @@
-<div class="employee-form-page">
-  <h1>{{ isEdit() ? 'Editare' : 'Adăugare' }} Angajat</h1>
-
-  <mat-card class="form-card">
-    <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        @if (!isEdit()) {
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Utilizator</mat-label>
-            <mat-select formControlName="userId">
-              @for (user of users(); track user._id) {
-                <mat-option [value]="user._id">
-                  {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
-                </mat-option>
-              }
-            </mat-select>
-            <mat-error>Selectați utilizatorul</mat-error>
-          </mat-form-field>
-        }
-
-        <div class="row">
-          <mat-form-field appearance="outline">
-            <mat-label>Departament</mat-label>
-            <input matInput formControlName="department" />
-            <mat-error>Departamentul este obligatoriu</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Funcție</mat-label>
-            <input matInput formControlName="position" />
-            <mat-error>Funcția este obligatorie</mat-error>
-          </mat-form-field>
-        </div>
-
-        <div class="row">
-          <mat-form-field appearance="outline">
-            <mat-label>Data angajării</mat-label>
-            <input matInput [matDatepicker]="hirePicker" formControlName="hireDate" />
-            <mat-datepicker-toggle matIconSuffix [for]="hirePicker"></mat-datepicker-toggle>
-            <mat-datepicker #hirePicker></mat-datepicker>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Manager</mat-label>
-            <mat-select formControlName="manager">
-              <mat-option value="">Fără manager</mat-option>
-              @for (mgr of managers(); track mgr._id) {
-                <mat-option [value]="mgr._id">{{ mgr.firstName }} {{ mgr.lastName }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="row">
-          <mat-form-field appearance="outline">
-            <mat-label>Zile concediu/an</mat-label>
-            <input matInput type="number" formControlName="totalLeaveDays" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Telefon</mat-label>
-            <input matInput formControlName="phone" />
-          </mat-form-field>
-        </div>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>CNP</mat-label>
-          <input matInput formControlName="cnp" />
-        </mat-form-field>
-
-        <div class="form-actions">
-          <button mat-button type="button" routerLink="/employees">Anulează</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || loading()">
-            <mat-icon>save</mat-icon> {{ isEdit() ? 'Salvează' : 'Creează' }}
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-</div>
+<h4>{{ isEdit() ? 'Editare' : 'Adaugare' }} Angajat</h4>
+<nb-card class="form-card"><nb-card-body>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    @if (!isEdit()) { <div class="form-group"><label class="label">Utilizator</label><nb-select fullWidth formControlName="userId" placeholder="Selecteaza">@for (u of users(); track u._id) { <nb-option [value]="u._id">{{ u.firstName }} {{ u.lastName }} ({{ u.email }})</nb-option> }</nb-select></div> }
+    <div class="row"><div class="form-group"><label class="label">Departament</label><input nbInput fullWidth formControlName="department" /></div><div class="form-group"><label class="label">Functie</label><input nbInput fullWidth formControlName="position" /></div></div>
+    <div class="row"><div class="form-group"><label class="label">Data angajarii</label><input nbInput fullWidth formControlName="hireDate" [nbDatepicker]="hp" /><nb-datepicker #hp></nb-datepicker></div><div class="form-group"><label class="label">Manager</label><nb-select fullWidth formControlName="manager" placeholder="Fara manager"><nb-option value="">Fara manager</nb-option>@for (m of managers(); track m._id) { <nb-option [value]="m._id">{{ m.firstName }} {{ m.lastName }}</nb-option> }</nb-select></div></div>
+    <div class="row"><div class="form-group"><label class="label">Zile CO/an</label><input nbInput fullWidth type="number" formControlName="totalLeaveDays" /></div><div class="form-group"><label class="label">Telefon</label><input nbInput fullWidth formControlName="phone" /></div></div>
+    <div class="form-group"><label class="label">CNP</label><input nbInput fullWidth formControlName="cnp" /></div>
+    <div class="form-actions"><button nbButton ghost routerLink="/employees" type="button">Anuleaza</button><button nbButton status="primary" type="submit" [disabled]="form.invalid || loading()"><nb-icon icon="save-outline"></nb-icon> {{ isEdit() ? 'Salveaza' : 'Creeaza' }}</button></div>
+  </form>
+</nb-card-body></nb-card>
