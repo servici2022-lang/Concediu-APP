@@ -23,7 +23,8 @@ export class MainLayoutComponent implements OnInit {
 
   private readonly allNavItems = [
     { title: 'Dashboard', icon: 'home-outline', link: '/dashboard', roles: ['admin', 'manager', 'employee'] as Role[] },
-    { title: 'Cererile Mele', icon: 'calendar-outline', link: '/leaves', roles: ['admin', 'manager', 'employee'] as Role[] },
+    { title: 'Calendar', icon: 'calendar-outline', link: '/calendar', roles: ['admin', 'manager', 'employee'] as Role[] },
+    { title: 'Cererile Mele', icon: 'list-outline', link: '/leaves', roles: ['admin', 'manager', 'employee'] as Role[] },
     { title: 'Cerere Noua', icon: 'plus-circle-outline', link: '/leaves/create', roles: ['admin', 'manager', 'employee'] as Role[] },
     { title: 'Angajati', icon: 'people-outline', link: '/employees', roles: ['admin', 'manager'] as Role[] },
     { title: 'Utilizatori', icon: 'person-outline', link: '/users', roles: ['admin'] as Role[] },

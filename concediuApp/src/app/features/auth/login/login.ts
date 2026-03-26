@@ -1,13 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { NbCardModule, NbInputModule, NbButtonModule, NbIconModule, NbSpinnerModule, NbAlertModule } from '@nebular/theme';
+import { NbCardModule, NbInputModule, NbButtonModule, NbIconModule, NbSpinnerModule, NbAlertModule, NbLayoutModule } from '@nebular/theme';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, NbCardModule, NbInputModule, NbButtonModule, NbIconModule, NbSpinnerModule, NbAlertModule],
+  imports: [ReactiveFormsModule, NbLayoutModule, NbCardModule, NbInputModule, NbButtonModule, NbIconModule, NbSpinnerModule, NbAlertModule],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

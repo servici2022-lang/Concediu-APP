@@ -61,6 +61,20 @@ export class LeaveListComponent implements OnInit {
     });
   }
 
+  exportPdf(id: string): void {
+    this.leaveService.exportPdf(id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cerere-concediu-${id}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => this.toastr.danger(err.error?.message || 'Eroare la export', 'Eroare'),
+    });
+  }
+
   getStatusLabel(status: string): string {
     return { pending: 'In asteptare', approved: 'Aprobat', rejected: 'Respins', cancelled: 'Anulat' }[status] || status;
   }

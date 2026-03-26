@@ -13,6 +13,9 @@ router.use(authenticate);
 // Stats (admin/manager)
 router.get('/stats', authorize('admin', 'manager'), leaveRequestController.getStats);
 
+// Calendar view (all authenticated users)
+router.get('/calendar', leaveRequestController.getCalendar);
+
 // Calculate working days (utility endpoint)
 router.get('/calculate-days', leaveRequestController.calculateDays);
 
@@ -28,6 +31,9 @@ router.put(
   validate(updateLeaveStatusValidation),
   leaveRequestController.updateStatus
 );
+
+// Export PDF (approved only)
+router.get('/:id/export-pdf', leaveRequestController.exportPdf);
 
 // Cancel (own request or admin)
 router.put('/:id/cancel', leaveRequestController.cancel);

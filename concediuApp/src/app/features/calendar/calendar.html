@@ -1,0 +1,73 @@
+<nb-card>
+  <nb-card-header>
+    <div class="calendar-header">
+      <h5>Calendar Concedii</h5>
+      <div class="calendar-controls">
+        <button nbButton ghost size="small" (click)="prevRange()">
+          <nb-icon icon="arrow-back-outline"></nb-icon>
+        </button>
+        <span class="range-label">{{ rangeLabel() }}</span>
+        <button nbButton ghost size="small" (click)="nextRange()">
+          <nb-icon icon="arrow-forward-outline"></nb-icon>
+        </button>
+        @if (departments().length > 1) {
+          <nb-select placeholder="Departament" size="small" [(ngModel)]="filterDepartment" (selectedChange)="filterDepartment.set($event)">
+            <nb-option [value]="''">Toate</nb-option>
+            @for (dept of departments(); track dept) {
+              <nb-option [value]="dept">{{ dept }}</nb-option>
+            }
+          </nb-select>
+        }
+      </div>
+    </div>
+  </nb-card-header>
+  <nb-card-body [nbSpinner]="loading()" nbSpinnerStatus="primary">
+    <div class="calendar-scroll">
+      <table class="calendar-table">
+        <thead>
+          <tr class="month-row">
+            <th class="name-col sticky-col"></th>
+            @for (day of days(); track day.dateStr) {
+              <th class="day-col" [class.weekend]="day.isWeekend" [class.today]="day.isToday">
+                {{ day.dayName }}
+              </th>
+            }
+          </tr>
+          <tr class="day-row">
+            <th class="name-col sticky-col">Angajat</th>
+            @for (day of days(); track day.dateStr) {
+              <th class="day-col" [class.weekend]="day.isWeekend" [class.today]="day.isToday"
+                  [nbTooltip]="day.dayNum + ' ' + day.monthName">
+                {{ day.dayNum }}
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (emp of filteredEmployees(); track emp.employeeId) {
+            <tr>
+              <td class="name-col sticky-col">
+                <span class="emp-name">{{ emp.lastName }}, {{ emp.firstName }}</span>
+              </td>
+              @for (day of days(); track day.dateStr) {
+                @let leave = getLeaveForDay(emp, day);
+                <td class="day-col" [class.weekend]="day.isWeekend" [class.today]="day.isToday">
+                  @if (leave) {
+                    <span class="leave-dot"
+                      [style.background-color]="leave.leaveType.color"
+                      [class.pending]="leave.status === 'pending'"
+                      [nbTooltip]="leave.leaveType.name + (leave.status === 'pending' ? ' (in asteptare)' : '')">
+                    </span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+          @if (!filteredEmployees().length && !loading()) {
+            <tr><td [attr.colspan]="days().length + 1" class="text-center">Nu exista angajati</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </nb-card-body>
+</nb-card>

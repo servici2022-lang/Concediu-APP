@@ -1,13 +1,93 @@
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 1.5rem; }
+h4 {
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+}
+
 .span-all { grid-column: 1 / -1; }
-nb-card-header { display: flex; align-items: center; gap: 8px; }
-.breakdown { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
-  .brow { display: flex; justify-content: space-between; padding: 6px 0; }
+
+nb-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// Leave balance breakdown
+.breakdown {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+
+  .brow {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    font-size: 0.9rem;
+  }
+
   .carry { color: #598bff; }
-  .total { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; font-size: 1.1rem; }
+
+  .total {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 10px;
+    margin-top: 4px;
+    font-size: 1.1rem;
+  }
 }
-.stats { display: flex; justify-content: space-around; margin: 16px 0; text-align: center;
-  .s { .v { display: block; font-size: 1.75rem; font-weight: 600; } .l { font-size: 0.7rem; text-transform: uppercase; opacity: 0.5; } }
-  .used .v { color: #ff3d71; } .pend .v { color: #ffaa00; } .rem .v, .ok .v { color: #00d68f; } .rej .v { color: #ff3d71; } .can .v { opacity: 0.4; }
+
+// Stats grid
+.stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0;
+  text-align: center;
+
+  .s {
+    .v {
+      display: block;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .l {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.45;
+      margin-top: 2px;
+    }
+  }
+
+  .used .v { color: #ff3d71; }
+  .pend .v { color: #ffaa00; }
+  .rem .v, .ok .v { color: #00d68f; }
+  .rej .v { color: #ff3d71; }
+  .can .v { opacity: 0.35; }
 }
-.leave-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); small { opacity: 0.6; flex: 1; } }
+
+// Recent leaves
+.leave-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.02); margin: 0 -16px; padding: 10px 16px; border-radius: 8px; }
+  &:last-child { border-bottom: none; }
+
+  small {
+    opacity: 0.5;
+    flex: 1;
+    font-size: 0.8rem;
+  }
+}

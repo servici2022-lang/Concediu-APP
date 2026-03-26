@@ -24,6 +24,9 @@
                 <button nbButton ghost status="success" size="tiny" (click)="approve(r._id)"><nb-icon icon="checkmark-circle-outline"></nb-icon></button>
                 <button nbButton ghost status="danger" size="tiny" (click)="reject(r._id)"><nb-icon icon="close-circle-outline"></nb-icon></button>
               }
+              @if (r.status === 'approved') {
+                <button nbButton ghost status="info" size="tiny" (click)="exportPdf(r._id)" title="Exporta PDF"><nb-icon icon="download-outline"></nb-icon></button>
+              }
               @if (r.status === 'pending' || r.status === 'approved') {
                 <button nbButton ghost size="tiny" (click)="cancel(r._id)"><nb-icon icon="slash-outline"></nb-icon></button>
               }

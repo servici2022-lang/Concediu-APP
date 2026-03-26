@@ -58,6 +58,15 @@ export class LeaveService {
     return this.http.put<ApiResponse<LeaveRequest>>(`${this.apiUrl}/${id}/cancel`, {});
   }
 
+  exportPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/export-pdf`, { responseType: 'blob' });
+  }
+
+  getCalendar(startDate: string, endDate: string): Observable<ApiResponse<any[]>> {
+    const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
+    return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/calendar`, { params });
+  }
+
   calculateDays(startDate: string, endDate: string): Observable<ApiResponse<WorkingDaysResponse>> {
     const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
     return this.http.get<ApiResponse<WorkingDaysResponse>>(`${this.apiUrl}/calculate-days`, {

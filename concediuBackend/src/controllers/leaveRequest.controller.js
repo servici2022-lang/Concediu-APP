@@ -1,3 +1,4 @@
+const PDFDocument = require('pdfkit');
 const { LeaveRequest, Employee, LeaveType } = require('../models');
 const { LEAVE_STATUS, ROLES } = require('../config/constants');
 const { calculateWorkingDays, getLeaveBalance } = require('../utils/leaveCalculator');
@@ -273,6 +274,163 @@ exports.calculateDays = async (req, res, next) => {
     );
 
     res.json({ data: { startDate, endDate, workingDays } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.exportPdf = async (req, res, next) => {
+  try {
+    const request = await LeaveRequest.findById(req.params.id)
+      .populate({
+        path: 'employee',
+        populate: { path: 'user', select: 'firstName lastName email' },
+      })
+      .populate('leaveType', 'name')
+      .populate('approvedBy', 'firstName lastName');
+
+    if (!request) {
+      throw new AppError('Leave request not found', 404);
+    }
+
+    if (request.status !== LEAVE_STATUS.APPROVED) {
+      throw new AppError('Only approved requests can be exported', 400);
+    }
+
+    const emp = request.employee;
+    const user = emp.user;
+    const fullName = `${user.firstName} ${user.lastName}`;
+    const formatDate = (d) => {
+      const date = new Date(d);
+      return date.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Europe/Bucharest' });
+    };
+
+    const doc = new PDFDocument({ size: 'A4', margin: 60 });
+
+    // Register fonts with Romanian diacritics support
+    const fontRegular = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+    const fontBold = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+    doc.registerFont('Romanian', fontRegular);
+    doc.registerFont('Romanian-Bold', fontBold);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="cerere-concediu-${fullName.replace(/\s+/g, '-')}.pdf"`
+    );
+    doc.pipe(res);
+
+    // Header
+    doc.fontSize(18).font('Romanian-Bold').text('CERERE DE CONCEDIU', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Romanian').text(`Nr. ${request._id.toString().slice(-8).toUpperCase()} / ${formatDate(request.approvedAt || new Date())}`, { align: 'center' });
+    doc.moveDown(2);
+
+    // Employee info
+    doc.fontSize(12).font('Romanian-Bold').text('Date angajat:');
+    doc.moveDown(0.3);
+    doc.fontSize(11).font('Romanian');
+    doc.text(`Nume: ${fullName}`);
+    doc.text(`Departament: ${emp.department}`);
+    doc.text(`Funcție: ${emp.position}`);
+    doc.text(`Email: ${user.email}`);
+    doc.moveDown(1.5);
+
+    // Leave details
+    doc.fontSize(12).font('Romanian-Bold').text('Detalii concediu:');
+    doc.moveDown(0.3);
+    doc.fontSize(11).font('Romanian');
+    doc.text(`Tip concediu: ${request.leaveType.name}`);
+    doc.text(`Data început: ${formatDate(request.startDate)}`);
+    doc.text(`Data sfârșit: ${formatDate(request.endDate)}`);
+    doc.text(`Zile lucrătoare: ${request.workingDays}`);
+    if (request.reason) {
+      doc.text(`Motiv: ${request.reason}`);
+    }
+    doc.moveDown(1.5);
+
+    // Approval info
+    doc.fontSize(12).font('Romanian-Bold').text('Aprobare:');
+    doc.moveDown(0.3);
+    doc.fontSize(11).font('Romanian');
+    doc.text(`Status: APROBAT`);
+    if (request.approvedBy) {
+      doc.text(`Aprobat de: ${request.approvedBy.firstName} ${request.approvedBy.lastName}`);
+    }
+    if (request.approvedAt) {
+      doc.text(`Data aprobării: ${formatDate(request.approvedAt)}`);
+    }
+
+    doc.end();
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getCalendar = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      throw new AppError('startDate and endDate are required', 400);
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Get all approved and pending leave requests that overlap with the range
+    const requests = await LeaveRequest.find({
+      status: { $in: [LEAVE_STATUS.APPROVED, LEAVE_STATUS.PENDING] },
+      startDate: { $lte: end },
+      endDate: { $gte: start },
+    })
+      .populate({
+        path: 'employee',
+        populate: { path: 'user', select: 'firstName lastName email' },
+      })
+      .populate('leaveType', 'name color')
+      .sort({ 'employee.user.lastName': 1 });
+
+    // Get all employees except admin accounts
+    const employees = await Employee.find({ isActive: { $ne: false } })
+      .populate('user', 'firstName lastName email role')
+      .sort({ 'user.lastName': 1 });
+
+    // Filter out admin users from calendar view
+    const visibleEmployees = employees.filter((e) => e.user && e.user.role !== 'admin');
+
+    // Build calendar data: group by employee
+    const calendarData = visibleEmployees.map((emp) => {
+      const empRequests = requests
+        .filter((r) => r.employee && r.employee._id.toString() === emp._id.toString())
+        .map((r) => ({
+          id: r._id,
+          startDate: r.startDate,
+          endDate: r.endDate,
+          status: r.status,
+          leaveType: {
+            name: r.leaveType?.name || 'N/A',
+            color: r.leaveType?.color || '#999999',
+          },
+        }));
+
+      return {
+        employeeId: emp._id,
+        firstName: emp.user?.firstName || '',
+        lastName: emp.user?.lastName || '',
+        department: emp.department,
+        leaves: empRequests,
+      };
+    });
+
+    // Sort by lastName then firstName
+    calendarData.sort((a, b) => {
+      const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
+      const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
+      return nameA.localeCompare(nameB, 'ro');
+    });
+
+    res.json({ data: calendarData });
   } catch (error) {
     next(error);
   }
