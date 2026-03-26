@@ -2,7 +2,7 @@
   <nb-layout-header fixed>
     <div class="header-container">
       <button nbButton ghost (click)="toggleSidebar()"><nb-icon icon="menu-outline"></nb-icon></button>
-      <div class="logo"><nb-icon icon="umbrella-outline" status="primary"></nb-icon><span>Concediu</span></div>
+      <div class="logo"><img src="logo.svg" alt="Logo" class="logo-icon" /><span>LDRobots Leave Board</span></div>
     </div>
     <div class="header-container">
       <nb-user [name]="user()?.firstName + ' ' + user()?.lastName" [title]="(user()?.role ?? '') | uppercase" size="medium" [nbContextMenu]="userMenuItems" nbContextMenuTag="user-menu"></nb-user>

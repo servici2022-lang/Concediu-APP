@@ -85,7 +85,7 @@ a, button { transition: all 0.2s ease; }
   &.status-pending { background: rgba(255, 170, 0, 0.12); color: #ffaa00; }
   &.status-approved { background: rgba(0, 214, 143, 0.12); color: #00d68f; }
   &.status-rejected { background: rgba(255, 61, 113, 0.12); color: #ff3d71; }
-  &.status-cancelled { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.35); }
+  &.status-cancelled { background: rgba(255, 61, 87, 0.15); color: #ff3d57; }
 }
 
 // Role badges
