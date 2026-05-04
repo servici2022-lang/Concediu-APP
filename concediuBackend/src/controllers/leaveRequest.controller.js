@@ -1,3 +1,4 @@
+const path = require('path');
 const PDFDocument = require('pdfkit');
 const { LeaveRequest, Employee, LeaveType } = require('../models');
 const { LEAVE_STATUS, ROLES } = require('../config/constants');
@@ -307,17 +308,20 @@ exports.exportPdf = async (req, res, next) => {
 
     const doc = new PDFDocument({ size: 'A4', margin: 60 });
 
-    // Register fonts with Romanian diacritics support
-    const fontRegular = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
-    const fontBold = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
-    doc.registerFont('Romanian', fontRegular);
-    doc.registerFont('Romanian-Bold', fontBold);
+    const fontsDir = path.join(__dirname, '..', 'assets', 'fonts');
+    doc.registerFont('Romanian', path.join(fontsDir, 'DejaVuSans.ttf'));
+    doc.registerFont('Romanian-Bold', path.join(fontsDir, 'DejaVuSans-Bold.ttf'));
+    doc.font('Romanian');
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="cerere-concediu-${fullName.replace(/\s+/g, '-')}.pdf"`
     );
+    doc.on('error', (err) => {
+      if (!res.headersSent) return next(err);
+      res.destroy(err);
+    });
     doc.pipe(res);
 
     // Header
