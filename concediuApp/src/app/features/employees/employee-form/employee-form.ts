@@ -5,6 +5,7 @@ import { NbCardModule, NbInputModule, NbSelectModule, NbDatepickerModule, NbButt
 import { EmployeeService } from '../../../core/services/employee.service';
 import { UserService } from '../../../core/services/user.service';
 import { User } from '../../../core/models';
+import { toDateOnly } from '../../../core/utils/date';
 
 @Component({
   selector: 'app-employee-form',
@@ -40,8 +41,8 @@ export class EmployeeFormComponent implements OnInit {
     this.loading.set(true);
     const val = this.form.getRawValue();
     const req$ = this.isEdit()
-      ? this.employeeService.update(this.employeeId, { department: val.department, position: val.position, hireDate: new Date(val.hireDate).toISOString(), manager: val.manager || null, totalLeaveDays: val.totalLeaveDays, phone: val.phone, cnp: val.cnp })
-      : this.employeeService.create({ userId: val.userId, department: val.department, position: val.position, hireDate: new Date(val.hireDate).toISOString(), manager: val.manager || undefined, totalLeaveDays: val.totalLeaveDays, phone: val.phone, cnp: val.cnp });
+      ? this.employeeService.update(this.employeeId, { department: val.department, position: val.position, hireDate: toDateOnly(val.hireDate), manager: val.manager || null, totalLeaveDays: val.totalLeaveDays, phone: val.phone, cnp: val.cnp })
+      : this.employeeService.create({ userId: val.userId, department: val.department, position: val.position, hireDate: toDateOnly(val.hireDate), manager: val.manager || undefined, totalLeaveDays: val.totalLeaveDays, phone: val.phone, cnp: val.cnp });
     req$.subscribe({
       next: () => { this.toastr.success(this.isEdit() ? 'Actualizat' : 'Creat', 'Succes'); this.router.navigate(['/employees']); },
       error: (err) => { this.loading.set(false); this.toastr.danger(err.error?.message || 'Eroare', 'Eroare'); },

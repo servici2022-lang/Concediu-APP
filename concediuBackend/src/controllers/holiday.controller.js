@@ -1,4 +1,5 @@
 const { Holiday } = require('../models');
+const { startOfLocalDay, localYearRange } = require('../utils/dateUtils');
 const AppError = require('../utils/AppError');
 
 exports.getAll = async (req, res, next) => {
@@ -7,12 +8,8 @@ exports.getAll = async (req, res, next) => {
     const filter = {};
 
     if (year) {
-      const startOfYear = new Date(parseInt(year), 0, 1);
-      const endOfYear = new Date(parseInt(year), 11, 31);
-      filter.$or = [
-        { date: { $gte: startOfYear, $lte: endOfYear } },
-        { recurring: true },
-      ];
+      const { start, end } = localYearRange(parseInt(year));
+      filter.$or = [{ date: { $gte: start, $lte: end } }, { recurring: true }];
     }
 
     const holidays = await Holiday.find(filter).sort({ date: 1 });
@@ -36,7 +33,10 @@ exports.getById = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const holiday = await Holiday.create(req.body);
+    const holiday = await Holiday.create({
+      ...req.body,
+      date: startOfLocalDay(req.body.date),
+    });
     res.status(201).json({ data: holiday });
   } catch (error) {
     next(error);
@@ -45,7 +45,12 @@ exports.create = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const holiday = await Holiday.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = { ...req.body };
+    if (updateData.date) {
+      updateData.date = startOfLocalDay(updateData.date);
+    }
+
+    const holiday = await Holiday.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });

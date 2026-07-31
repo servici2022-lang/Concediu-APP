@@ -1,5 +1,6 @@
 const { Employee, User } = require('../models');
 const { getLeaveBalance } = require('../utils/leaveCalculator');
+const { startOfLocalDay } = require('../utils/dateUtils');
 const AppError = require('../utils/AppError');
 
 exports.getAll = async (req, res, next) => {
@@ -112,7 +113,7 @@ exports.create = async (req, res, next) => {
       user: userId,
       department,
       position,
-      hireDate,
+      hireDate: startOfLocalDay(hireDate),
       manager: manager || null,
       totalLeaveDays,
       phone,
@@ -138,7 +139,7 @@ exports.update = async (req, res, next) => {
 
     if (department) updateData.department = department;
     if (position) updateData.position = position;
-    if (hireDate) updateData.hireDate = hireDate;
+    if (hireDate) updateData.hireDate = startOfLocalDay(hireDate);
     if (manager !== undefined) updateData.manager = manager || null;
     if (totalLeaveDays !== undefined) updateData.totalLeaveDays = totalLeaveDays;
     if (phone !== undefined) updateData.phone = phone;

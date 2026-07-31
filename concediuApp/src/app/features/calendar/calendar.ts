@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NbCardModule, NbButtonModule, NbIconModule, NbTooltipModule, NbSpinnerModule, NbSelectModule } from '@nebular/theme';
 import { FormsModule } from '@angular/forms';
 import { LeaveService } from '../../core/services/leave.service';
+import { toDateOnly } from '../../core/utils/date';
 
 interface CalendarDay {
   date: Date;
@@ -43,6 +44,8 @@ export class CalendarComponent implements OnInit {
 
   loading = signal(false);
   employees = signal<CalendarEmployee[]>([]);
+  /** Zilele libere legale din intervalul afișat: 'YYYY-MM-DD' -> denumire. */
+  holidays = signal<Map<string, string>>(new Map());
   rangeStart = signal(new Date());
   filterDepartment = signal<string>('');
 
@@ -78,7 +81,7 @@ export class CalendarComponent implements OnInit {
         monthName: monthNames[d.getMonth()],
         isWeekend: dow === 0 || dow === 6,
         isToday: d.getTime() === today.getTime(),
-        dateStr: d.toISOString().split('T')[0],
+        dateStr: toDateOnly(d),
       });
     }
     return result;
@@ -112,8 +115,15 @@ export class CalendarComponent implements OnInit {
     this.loadCalendar();
   }
 
+  /** Denumirea sărbătorii legale din ziua respectivă, dacă e zi liberă. */
+  holidayName(day: CalendarDay): string | null {
+    return this.holidays().get(day.dateStr) ?? null;
+  }
+
   getLeaveForDay(emp: CalendarEmployee, day: CalendarDay): EmployeeLeave | null {
-    if (day.isWeekend) return null;
+    // Sărbătorile legale nu se scad din concediu (vezi calculateWorkingDays),
+    // deci nu se afișează nici ca zile de concediu.
+    if (day.isWeekend || this.holidays().has(day.dateStr)) return null;
     return emp.leaves.find((l) => {
       const start = new Date(l.startDate);
       const end = new Date(l.endDate);
@@ -133,6 +143,9 @@ export class CalendarComponent implements OnInit {
     this.leaveService.getCalendar(startDate, endDate).subscribe({
       next: (res) => {
         this.employees.set(res.data);
+        this.holidays.set(
+          new Map((res.holidays ?? []).map((h): [string, string] => [h.date, h.name])),
+        );
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

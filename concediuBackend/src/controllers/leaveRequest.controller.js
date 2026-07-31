@@ -2,7 +2,16 @@ const path = require('path');
 const PDFDocument = require('pdfkit');
 const { LeaveRequest, Employee, LeaveType } = require('../models');
 const { LEAVE_STATUS, ROLES } = require('../config/constants');
-const { calculateWorkingDays, getLeaveBalance } = require('../utils/leaveCalculator');
+const {
+  calculateWorkingDays,
+  getLeaveBalance,
+  getHolidaysInRange,
+} = require('../utils/leaveCalculator');
+const {
+  startOfLocalDay,
+  endOfLocalDay,
+  localYearRange,
+} = require('../utils/dateUtils');
 const AppError = require('../utils/AppError');
 
 exports.getAll = async (req, res, next) => {
@@ -22,11 +31,8 @@ exports.getAll = async (req, res, next) => {
     if (leaveTypeId) filter.leaveType = leaveTypeId;
 
     if (year) {
-      const y = parseInt(year);
-      filter.startDate = {
-        $gte: new Date(y, 0, 1),
-        $lte: new Date(y, 11, 31),
-      };
+      const { start, end } = localYearRange(parseInt(year));
+      filter.startDate = { $gte: start, $lte: end };
     }
 
     // Non-admin/manager users can only see their own requests
@@ -113,9 +119,10 @@ exports.create = async (req, res, next) => {
       throw new AppError('Invalid or inactive leave type', 400);
     }
 
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Validate dates. Se normalizează la miezul nopții local, ca ziua salvată să fie
+    // exact ziua aleasă de utilizator indiferent de forma trimisă de client.
+    const start = startOfLocalDay(startDate);
+    const end = startOfLocalDay(endDate);
     if (start > end) {
       throw new AppError('Start date must be before or equal to end date', 400);
     }
@@ -379,8 +386,8 @@ exports.getCalendar = async (req, res, next) => {
       throw new AppError('startDate and endDate are required', 400);
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = startOfLocalDay(startDate);
+    const end = endOfLocalDay(endDate);
 
     // Get all approved and pending leave requests that overlap with the range
     const requests = await LeaveRequest.find({
@@ -434,7 +441,14 @@ exports.getCalendar = async (req, res, next) => {
       return nameA.localeCompare(nameB, 'ro');
     });
 
-    res.json({ data: calendarData });
+    // Sărbătorile legale din interval, ca zilele libere să fie marcate în calendar
+    // și să nu fie desenate ca zile de concediu.
+    const holidayMap = await getHolidaysInRange(start, end);
+    const holidays = Array.from(holidayMap, ([date, name]) => ({ date, name })).sort(
+      (a, b) => a.date.localeCompare(b.date)
+    );
+
+    res.json({ data: calendarData, holidays });
   } catch (error) {
     next(error);
   }
@@ -443,8 +457,7 @@ exports.getCalendar = async (req, res, next) => {
 exports.getStats = async (req, res, next) => {
   try {
     const year = parseInt(req.query.year) || new Date().getFullYear();
-    const startOfYear = new Date(year, 0, 1);
-    const endOfYear = new Date(year, 11, 31);
+    const { start: startOfYear, end: endOfYear } = localYearRange(year);
 
     const dateFilter = {
       startDate: { $gte: startOfYear, $lte: endOfYear },
@@ -458,13 +471,13 @@ exports.getStats = async (req, res, next) => {
         LeaveRequest.countDocuments({ ...dateFilter, status: LEAVE_STATUS.CANCELLED }),
       ]);
 
-    // People on leave today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // People on leave today. Limitele acoperă toată ziua, ca o cerere să fie găsită
+    // indiferent dacă e stocată la miezul nopții local sau UTC.
+    const now = new Date();
     const onLeaveToday = await LeaveRequest.find({
       status: LEAVE_STATUS.APPROVED,
-      startDate: { $lte: today },
-      endDate: { $gte: today },
+      startDate: { $lte: endOfLocalDay(now) },
+      endDate: { $gte: startOfLocalDay(now) },
     }).populate({
       path: 'employee',
       populate: { path: 'user', select: 'firstName lastName' },

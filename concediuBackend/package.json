@@ -10,6 +10,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/seeds/seed.js",
+    "recalc:days": "node src/scripts/recalc-working-days.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

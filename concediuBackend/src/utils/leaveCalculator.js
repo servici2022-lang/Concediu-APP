@@ -1,51 +1,77 @@
 const { Holiday } = require('../models');
+const { toDateKey, localDayAnchor, localYearRange } = require('./dateUtils');
 
 /**
- * Calculate the number of working days between two dates,
+ * Sărbătorile legale dintr-un interval, ca Map<'YYYY-MM-DD', nume>.
+ * Cele marcate `recurring` se proiectează pe fiecare an atins de interval.
+ *
+ * Sursă unică pentru numărarea zilelor lucrătoare și pentru afișarea în calendar,
+ * ca ambele să vadă exact aceleași zile libere.
+ */
+const getHolidaysInRange = async (startDate, endDate) => {
+  const start = localDayAnchor(startDate);
+  const end = localDayAnchor(endDate);
+
+  // Marjă de o zi în ambele capete: sărbătorile din zilele de la margine pot fi
+  // stocate ca miezul nopții local, adică înaintea ancorei de la ora 12.
+  const queryStart = new Date(start);
+  queryStart.setDate(queryStart.getDate() - 1);
+  const queryEnd = new Date(end);
+  queryEnd.setDate(queryEnd.getDate() + 1);
+
+  const [fixedHolidays, recurringHolidays] = await Promise.all([
+    Holiday.find({ date: { $gte: queryStart, $lte: queryEnd } }),
+    Holiday.find({ recurring: true }),
+  ]);
+
+  const holidays = new Map();
+
+  for (const h of fixedHolidays) {
+    holidays.set(toDateKey(h.date), h.name);
+  }
+
+  for (const rh of recurringHolidays) {
+    const rhDate = new Date(rh.date);
+    for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+      const projected = localDayAnchor(new Date(y, rhDate.getMonth(), rhDate.getDate()));
+      if (projected >= start && projected <= end) {
+        holidays.set(toDateKey(projected), rh.name);
+      }
+    }
+  }
+
+  return holidays;
+};
+
+/**
+ * Calculate the number of working days between two dates (both inclusive),
  * excluding weekends (Saturday, Sunday) and public holidays.
+ *
+ * Zilele sunt comparate în calendarul local (vezi dateUtils): o dată salvată ca
+ * miezul nopții local reprezintă ziua următoare în UTC, deci citirea în UTC ar
+ * deplasa tot intervalul cu o zi înapoi.
  */
 const calculateWorkingDays = async (startDate, endDate) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = localDayAnchor(startDate);
+  const end = localDayAnchor(endDate);
 
   if (start > end) {
     throw new Error('Start date must be before or equal to end date');
   }
 
-  const holidays = await Holiday.find({
-    date: { $gte: start, $lte: end },
-  });
-
-  const holidaySet = new Set(
-    holidays.map((h) => h.date.toISOString().split('T')[0])
-  );
-
-  const recurringHolidays = await Holiday.find({ recurring: true });
-  const year = start.getFullYear();
-  const endYear = end.getFullYear();
-
-  for (const rh of recurringHolidays) {
-    const rhDate = new Date(rh.date);
-    for (let y = year; y <= endYear; y++) {
-      const recurringDate = new Date(Date.UTC(y, rhDate.getUTCMonth(), rhDate.getUTCDate()));
-      if (recurringDate >= start && recurringDate <= end) {
-        holidaySet.add(recurringDate.toISOString().split('T')[0]);
-      }
-    }
-  }
+  const holidays = await getHolidaysInRange(start, end);
 
   let workingDays = 0;
   const current = new Date(start);
 
   while (current <= end) {
-    const dayOfWeek = current.getUTCDay();
-    const dateStr = current.toISOString().split('T')[0];
+    const dayOfWeek = current.getDay();
 
-    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(dateStr)) {
+    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.has(toDateKey(current))) {
       workingDays++;
     }
 
-    current.setUTCDate(current.getUTCDate() + 1);
+    current.setDate(current.getDate() + 1);
   }
 
   return workingDays;
@@ -91,8 +117,7 @@ const getUsedDaysForYear = async (employeeId, year) => {
   const { LeaveRequest } = require('../models');
   const { LEAVE_STATUS } = require('../config/constants');
 
-  const startOfYear = new Date(Date.UTC(year, 0, 1));
-  const endOfYear = new Date(Date.UTC(year, 11, 31));
+  const { start: startOfYear, end: endOfYear } = localYearRange(year);
 
   const approvedLeaves = await LeaveRequest.find({
     employee: employeeId,
@@ -121,10 +146,9 @@ const getLeaveBalance = async (employeeId, year) => {
 
   const currentYear = year || new Date().getFullYear();
   const hireDate = employee.hireDate;
-  const hireYear = new Date(hireDate).getUTCFullYear();
+  const hireYear = new Date(hireDate).getFullYear();
 
-  const periodStart = new Date(Date.UTC(currentYear, 0, 1));
-  const periodEnd = new Date(Date.UTC(currentYear, 11, 31));
+  const { start: periodStart, end: periodEnd } = localYearRange(currentYear);
 
   // Days for current year (prorated if hired this year)
   const currentYearDays = getDaysForYear(hireDate, employee.totalLeaveDays, currentYear);
@@ -140,8 +164,7 @@ const getLeaveBalance = async (employeeId, year) => {
   const totalDays = currentYearDays + carryoverDays;
 
   // Current year usage
-  const startOfYear = new Date(Date.UTC(currentYear, 0, 1));
-  const endOfYear = new Date(Date.UTC(currentYear, 11, 31));
+  const { start: startOfYear, end: endOfYear } = localYearRange(currentYear);
 
   const approvedLeaves = await LeaveRequest.find({
     employee: employeeId,
@@ -175,4 +198,4 @@ const getLeaveBalance = async (employeeId, year) => {
   };
 };
 
-module.exports = { calculateWorkingDays, getLeaveBalance };
+module.exports = { calculateWorkingDays, getLeaveBalance, getHolidaysInRange };

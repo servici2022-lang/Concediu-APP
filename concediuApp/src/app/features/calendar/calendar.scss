@@ -87,6 +87,12 @@ thead .sticky-col {
   color: rgba(255, 255, 255, 0.3);
 }
 
+// Sarbatoare legala. Se pune dupa .weekend si inainte de .today, ca ziua curenta
+// sa ramana evidentiata; punctul negru marcheaza oricum ziua libera.
+.holiday {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
 .today {
   background: rgba(0, 149, 255, 0.15) !important;
   border-color: rgba(0, 149, 255, 0.3) !important;
@@ -107,6 +113,18 @@ thead .sticky-col {
     opacity: 0.5;
     border: 2px dashed rgba(255, 255, 255, 0.4);
   }
+}
+
+// Punct negru pentru zilele libere legale. Conturul deschis il face vizibil
+// pe fundalul inchis al temei cosmic.
+.holiday-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.45);
 }
 
 .text-center {

@@ -9,6 +9,7 @@ import {
   LeaveType,
   LeaveStats,
   Holiday,
+  CalendarHoliday,
   WorkingDaysResponse,
   ApiResponse,
   PaginatedResponse,
@@ -62,9 +63,15 @@ export class LeaveService {
     return this.http.get(`${this.apiUrl}/${id}/export-pdf`, { responseType: 'blob' });
   }
 
-  getCalendar(startDate: string, endDate: string): Observable<ApiResponse<any[]>> {
+  getCalendar(
+    startDate: string,
+    endDate: string,
+  ): Observable<ApiResponse<any[]> & { holidays: CalendarHoliday[] }> {
     const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
-    return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/calendar`, { params });
+    return this.http.get<ApiResponse<any[]> & { holidays: CalendarHoliday[] }>(
+      `${this.apiUrl}/calendar`,
+      { params },
+    );
   }
 
   calculateDays(startDate: string, endDate: string): Observable<ApiResponse<WorkingDaysResponse>> {

@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { NbCardModule, NbInputModule, NbSelectModule, NbDatepickerModule, NbButtonModule, NbIconModule, NbSpinnerModule, NbToastrService } from '@nebular/theme';
 import { LeaveService } from '../../../core/services/leave.service';
 import { LeaveType } from '../../../core/models';
+import { toDateOnly } from '../../../core/utils/date';
 
 @Component({
   selector: 'app-leave-create',
@@ -34,7 +35,7 @@ export class LeaveCreateComponent implements OnInit {
     const end = this.form.get('endDate')?.value;
     if (!start || !end) { this.workingDays.set(null); return; }
     this.calculating.set(true);
-    this.leaveService.calculateDays(new Date(start).toISOString().split('T')[0], new Date(end).toISOString().split('T')[0]).subscribe({
+    this.leaveService.calculateDays(toDateOnly(start), toDateOnly(end)).subscribe({
       next: (res) => { this.workingDays.set(res.data.workingDays); this.calculating.set(false); },
       error: () => { this.workingDays.set(null); this.calculating.set(false); },
     });
@@ -44,7 +45,7 @@ export class LeaveCreateComponent implements OnInit {
     if (this.form.invalid) return;
     this.loading.set(true);
     const { leaveTypeId, startDate, endDate, reason } = this.form.value;
-    this.leaveService.create({ leaveTypeId, startDate: new Date(startDate).toISOString(), endDate: new Date(endDate).toISOString(), reason }).subscribe({
+    this.leaveService.create({ leaveTypeId, startDate: toDateOnly(startDate), endDate: toDateOnly(endDate), reason }).subscribe({
       next: () => { this.toastr.success('Cererea a fost trimisa!', 'Succes'); this.router.navigate(['/leaves']); },
       error: (err) => { this.loading.set(false); this.toastr.danger(err.error?.message || 'Eroare', 'Eroare'); },
     });

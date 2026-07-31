@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NbCardModule, NbInputModule, NbDatepickerModule, NbButtonModule, NbIconModule, NbToggleModule, NbToastrService } from '@nebular/theme';
 import { LeaveService } from '../../../core/services/leave.service';
+import { toDateOnly } from '../../../core/utils/date';
 
 @Component({
   selector: 'app-holiday-form',
@@ -29,7 +30,7 @@ export class HolidayFormComponent implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) return;
     this.loading.set(true);
-    const val = { ...this.form.value, date: new Date(this.form.value.date).toISOString() };
+    const val = { ...this.form.value, date: toDateOnly(this.form.value.date) };
     const req$ = this.isEdit() ? this.leaveService.updateHoliday(this.holidayId, val) : this.leaveService.createHoliday(val);
     req$.subscribe({
       next: () => { this.toastr.success(this.isEdit() ? 'Actualizata' : 'Creata', 'Succes'); this.router.navigate(['/holidays']); },

@@ -57,6 +57,12 @@ export interface Holiday {
   recurring: boolean;
 }
 
+/** Sărbătoare legală proiectată pe o zi concretă din calendar ('YYYY-MM-DD'). */
+export interface CalendarHoliday {
+  date: string;
+  name: string;
+}
+
 export interface WorkingDaysResponse {
   startDate: string;
   endDate: string;

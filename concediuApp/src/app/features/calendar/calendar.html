@@ -36,8 +36,10 @@
           <tr class="day-row">
             <th class="name-col sticky-col">Angajat</th>
             @for (day of days(); track day.dateStr) {
+              @let holiday = holidayName(day);
               <th class="day-col" [class.weekend]="day.isWeekend" [class.today]="day.isToday"
-                  [nbTooltip]="day.dayNum + ' ' + day.monthName">
+                  [class.holiday]="!!holiday"
+                  [nbTooltip]="holiday ? holiday + ' - zi libera' : day.dayNum + ' ' + day.monthName">
                 {{ day.dayNum }}
               </th>
             }
@@ -51,8 +53,12 @@
               </td>
               @for (day of days(); track day.dateStr) {
                 @let leave = getLeaveForDay(emp, day);
-                <td class="day-col" [class.weekend]="day.isWeekend" [class.today]="day.isToday">
-                  @if (leave) {
+                @let holiday = holidayName(day);
+                <td class="day-col" [class.weekend]="day.isWeekend" [class.today]="day.isToday"
+                    [class.holiday]="!!holiday">
+                  @if (holiday) {
+                    <span class="holiday-dot" [nbTooltip]="holiday + ' - zi libera'"></span>
+                  } @else if (leave) {
                     <span class="leave-dot"
                       [style.background-color]="leave.leaveType.color"
                       [class.pending]="leave.status === 'pending'"
