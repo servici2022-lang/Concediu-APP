@@ -119,7 +119,9 @@ const start = async () => {
   }
 
   if (config.desktop) {
-    if ((await User.estimatedDocumentCount()) === 0) {
+    // exists(), nu estimatedDocumentCount(): estimarea poate întoarce 0 după o oprire bruscă
+    // a MongoDB (pană de curent), iar baza ar fi luată drept goală.
+    if (!(await User.exists({}))) {
       logger.info('Empty database: creating the admin account, leave types and public holidays');
       await seedDatabase(logger);
     } else {
