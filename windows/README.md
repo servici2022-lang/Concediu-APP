@@ -38,19 +38,156 @@ Conținutul folderului:
 
 ## 2. MongoDB
 
-Aplicația are nevoie de MongoDB 7 sau mai nou. Ai trei variante.
+MongoDB e baza de date în care aplicația își păstrează toate datele. Aplicația merge cu **MongoDB 7 sau mai nou**: e testată cu 7.0 și cu 9.0, versiunea instalată acum de `winget`. Alege una din variante:
 
-**A. Pe același calculator** (cea mai simplă). Într-un terminal (PowerShell sau Command Prompt):
+| Situație | Ce pași faci |
+|---|---|
+| **A. MongoDB pe același calculator cu aplicația** (recomandat la început) | [2.1 Instalare](#21-instalare) → [2.2 Același calculator](#22-configurare-pe-același-calculator), plus, recomandat, [2.3 Parolă](#23-utilizator-și-parolă-recomandat) |
+| **B. MongoDB pe alt calculator sau server din rețea** | Pe calculatorul cu MongoDB: [2.1](#21-instalare) → [2.3 Parolă](#23-utilizator-și-parolă-recomandat) → [2.4 Acces din rețea](#24-mongodb-pe-alt-calculator-acces-din-rețea) |
+| **C. MongoDB Atlas, în cloud** (nu instalezi nimic) | [2.5 MongoDB Atlas](#25-mongodb-atlas-cloud) |
+
+### 2.1 Instalare
+
+Într-un PowerShell sau Command Prompt:
 
 ```powershell
-winget install MongoDB.Server
+winget install MongoDB.Server          # serverul MongoDB, instalat ca serviciu Windows
+winget install MongoDB.Shell           # mongosh: consola pentru comenzi (necesară la pasul 2.3)
+winget install MongoDB.Compass.Full    # opțional: interfață grafică pentru vizualizarea datelor
 ```
 
-MongoDB se instalează ca serviciu Windows, pornește singur odată cu calculatorul și ascultă doar local, pe `localhost:27017`. Nu mai trebuie configurat nimic.
+**Alternativă fără winget:** descarcă installer-ul de pe [mongodb.com/try/download/community](https://www.mongodb.com/try/download/community) (Windows, msi). La instalare:
+1. Alege **Complete**.
+2. Lasă bifat **„Install MongoD as a Service”**.
+3. Bifează opțional **MongoDB Compass**.
 
-**B. Pe alt calculator sau server din rețea.** Ai nevoie de adresa lui IP și, dacă are autentificare, de un utilizator și o parolă.
+**Verificare.** Serviciul trebuie să ruleze și să răspundă:
 
-**C. MongoDB Atlas, în cloud.** Copiezi șirul de conexiune `mongodb+srv://...` din consola Atlas.
+```powershell
+Get-Service MongoDB                                   # Status: Running
+mongosh --quiet --eval "db.runCommand({ ping: 1 })"   # { ok: 1 }
+```
+
+Dacă `Get-Service MongoDB` nu găsește serviciul, reinstalează cu installer-ul msi și bifează „Install MongoD as a Service”.
+
+Unde sunt fișierele (`<versiune>` e de forma `9.0`):
+
+| Ce | Unde |
+|---|---|
+| Configurarea MongoDB | `C:\Program Files\MongoDB\Server\<versiune>\bin\mongod.cfg` |
+| Datele | `C:\Program Files\MongoDB\Server\<versiune>\data\` |
+| Jurnalul (pentru erori) | `C:\Program Files\MongoDB\Server\<versiune>\log\mongod.log` |
+
+### 2.2 Configurare pe același calculator
+
+Nu trebuie schimbat nimic. MongoDB ascultă implicit doar pe acest calculator (`127.0.0.1:27017`), deci nu e accesibil din rețea. În `config.env`:
+
+```ini
+MONGO_URI=mongodb://localhost:27017/concediu
+```
+
+Baza de date `concediu` se creează singură la prima pornire a aplicației.
+
+### 2.3 Utilizator și parolă (recomandat)
+
+Fără parolă, orice program de pe calculatorul cu MongoDB poate citi datele. **Dacă MongoDB e accesibil din rețea (varianta B), parola e obligatorie.**
+
+**1. Creează utilizatorii.** Deschide consola MongoDB cu comanda `mongosh`, apoi scrie pe rând:
+
+```js
+use admin
+db.createUser({ user: "admin", pwd: passwordPrompt(), roles: ["root"] })
+
+use concediu
+db.createUser({ user: "concediu", pwd: passwordPrompt(), roles: [{ role: "readWrite", db: "concediu" }] })
+
+exit
+```
+
+- `passwordPrompt()` îți cere parola fără s-o afișeze pe ecran.
+- `admin` e administratorul MongoDB, pentru întreținere și backup.
+- `concediu` e utilizatorul aplicației și are drepturi doar pe baza `concediu`.
+- Folosește parole din litere și cifre: caracterele `@ : / ? # %` trebuie codificate în `MONGO_URI`.
+
+**2. Pornește verificarea parolei.**
+1. Deschide **Notepad ca Administrator** (click dreapta → Run as administrator).
+2. Deschide `mongod.cfg` (vezi tabelul de la 2.1) și adaugă la final:
+
+   ```yaml
+   security:
+     authorization: enabled
+   ```
+   `security:` stă la începutul rândului, iar `authorization` are în față exact **2 spații**, nu tab. Dacă în fișier există deja o linie `#security:`, înlocuiește-o pe aceea.
+
+**3. Repornește MongoDB.** Într-un PowerShell deschis ca Administrator:
+
+```powershell
+Restart-Service MongoDB
+```
+
+**4. Pune utilizatorul în `config.env`:**
+
+```ini
+MONGO_URI=mongodb://concediu:PAROLA@localhost:27017/concediu
+```
+
+**Test:**
+
+```powershell
+mongosh "mongodb://concediu:PAROLA@localhost:27017/concediu" --quiet --eval "db.runCommand({ ping: 1 })"
+```
+
+Dacă după repornire serviciul nu mai pornește, ai o greșeală de indentare în `mongod.cfg`. Detaliile sunt în `mongod.log`.
+
+### 2.4 MongoDB pe alt calculator (acces din rețea)
+
+Pașii de mai jos se fac **pe calculatorul cu MongoDB**, după [2.3](#23-utilizator-și-parolă-recomandat). Nu deschide niciodată MongoDB spre rețea fără parolă. În exemplu, calculatorul cu MongoDB are IP-ul `192.168.1.50`, iar cel cu aplicația `192.168.1.20`.
+
+**1. Ascultă și pe IP-ul din rețea.** În `mongod.cfg` (Notepad ca Administrator), secțiunea `net` devine:
+
+```yaml
+net:
+  port: 27017
+  bindIp: 127.0.0.1,192.168.1.50
+```
+
+**2. Repornește serviciul:** `Restart-Service MongoDB`, în PowerShell ca Administrator.
+
+**3. Permite în firewall doar calculatorul cu aplicația.** În PowerShell ca Administrator:
+
+```powershell
+netsh advfirewall firewall add rule name="MongoDB" dir=in action=allow protocol=TCP localport=27017 remoteip=192.168.1.20 profile=private
+```
+
+**Pe calculatorul cu aplicația**, în `config.env`:
+
+```ini
+MONGO_URI=mongodb://concediu:PAROLA@192.168.1.50:27017/concediu
+```
+
+Testul conexiunii, rulat de pe calculatorul cu aplicația: `Test-NetConnection 192.168.1.50 -Port 27017` trebuie să afișeze `TcpTestSucceeded : True`.
+
+### 2.5 MongoDB Atlas (cloud)
+
+1. **Contul:** îți faci cont pe [mongodb.com/atlas](https://www.mongodb.com/atlas) și creezi un cluster. Varianta **M0** e gratuită. Alege o regiune din Europa.
+2. **Utilizatorul:** în **Database Access → Add New Database User**, alegi un utilizator și o parolă, cu rolul „Read and write to any database”.
+3. **Accesul:** în **Network Access → Add IP Address**, adaugi adresa IP publică a firmei.
+4. **Conexiunea:** în **Connect → Drivers**, copiezi șirul de conexiune și adaugi `/concediu` înainte de `?`:
+
+   ```ini
+   MONGO_URI=mongodb+srv://utilizator:parola@cluster0.xxxxx.mongodb.net/concediu?retryWrites=true&w=majority
+   ```
+
+### Vizualizarea datelor (opțional)
+
+Cu **MongoDB Compass** te conectezi cu același șir ca în `MONGO_URI`. Deschizi baza `concediu`, iar colecțiile sunt:
+- `users`: conturile;
+- `employees`: profilurile de angajat;
+- `leaverequests`: cererile;
+- `leavetypes`: tipurile de concediu;
+- `holidays`: sărbătorile.
+
+Modificările se fac din aplicație, nu direct în baza de date.
 
 ## 3. Configurare: `config.env`
 
@@ -60,11 +197,11 @@ Deschide `config.env` cu Notepad. De obicei trebuie modificat doar `MONGO_URI`:
 # MongoDB pe același calculator (varianta A)
 MONGO_URI=mongodb://localhost:27017/concediu
 
-# MongoDB pe alt calculator din rețea (varianta B)
-# MONGO_URI=mongodb://192.168.1.50:27017/concediu
+# MongoDB cu utilizator și parolă (vezi 2.3)
+# MONGO_URI=mongodb://concediu:PAROLA@localhost:27017/concediu
 
-# MongoDB cu utilizator și parolă
-# MONGO_URI=mongodb://utilizator:parola@192.168.1.50:27017/concediu?authSource=admin
+# MongoDB pe alt calculator din rețea (varianta B, vezi 2.4)
+# MONGO_URI=mongodb://concediu:PAROLA@192.168.1.50:27017/concediu
 
 # MongoDB Atlas (varianta C)
 # MONGO_URI=mongodb+srv://utilizator:parola@cluster0.xxxxx.mongodb.net/concediu
@@ -166,6 +303,8 @@ mongodump --uri "mongodb://localhost:27017/concediu" --out "D:\Backup\concediu-$
 mongorestore --uri "mongodb://localhost:27017/concediu" --drop "D:\Backup\concediu-2026-10-25\concediu"
 ```
 
+Dacă MongoDB are parolă ([2.3](#23-utilizator-și-parolă-recomandat)), folosește în comenzi utilizatorul `admin`: `--uri "mongodb://admin:PAROLA@localhost:27017/concediu?authSource=admin"`.
+
 Păstrează și o copie a `config.env`.
 
 ## 9. Probleme frecvente
@@ -173,12 +312,14 @@ Păstrează și o copie a `config.env`.
 | Mesaj sau simptom | Cauza și soluția |
 |---|---|
 | `MongoDB connection error (...): connect ECONNREFUSED` | MongoDB nu rulează sau adresa e greșită. Verifică serviciul **MongoDB** în `services.msc` și `MONGO_URI` din `config.env`. |
-| `MongoDB connection error (...): Authentication failed` | Utilizator sau parolă greșite în `MONGO_URI`. Dacă utilizatorul e creat în baza `admin`, adaugă `?authSource=admin` la final. |
+| `MongoDB connection error (...): Authentication failed` | Utilizator sau parolă greșite în `MONGO_URI`. Utilizatorul `concediu` de la [2.3](#23-utilizator-și-parolă-recomandat) e creat în baza `concediu`. Dacă folosești unul creat în baza `admin`, adaugă `?authSource=admin` la final. |
+| `MongoDB requires a user with access to database "concediu"`, `requires authentication` sau `not authorized on concediu` | MongoDB cere parolă, dar `MONGO_URI` nu are utilizator și parolă, sau utilizatorul nu are drepturi pe baza `concediu`. Vezi [2.3, pașii 1 și 4](#23-utilizator-și-parolă-recomandat). |
+| Serviciul MongoDB nu mai pornește după ce ai modificat `mongod.cfg` | Greșeală de indentare. Folosește doar spații, nu tab-uri, câte 2 sub `security:` și `net:`. Cauza exactă e în `mongod.log`. |
 | `Port 3000 is used by another program` | Alt program folosește portul. Pune `PORT=3001` în `config.env` și intră la `http://localhost:3001`. |
 | `Nu pot scrie fișierul de configurare` | Folderul nu permite scrierea, de exemplu e în `C:\Program Files`. Mută-l în `C:\ConcediuAPP`. |
 | Colegii nu pot intra | Verifică regula din Windows Firewall ([secțiunea 5](#5-acces-din-rețea)) și că folosesc adresa IP afișată în fereastră, cu portul. |
 | Fereastra se închide imediat | Deschide un Command Prompt în folderul aplicației și pornește `Concediu-APP.exe` de acolo, ca să vezi mesajul. |
-| Ai uitat parola de admin | Alt administrator o poate reseta din **Utilizatori**. Dacă nu există altul, șterge baza de date și repornește aplicația: se creează din nou contul inițial, dar **se pierd datele**. Fă înainte un backup. |
+| Ai uitat parola de admin | Aplicația nu are încă resetare de parolă. Creezi un administrator nou, fără să pierzi date: în `config.env` pui un `ADMIN_EMAIL` nou (un email care nu există încă în aplicație) și un `ADMIN_PASSWORD`, apoi rulezi o dată `Concediu-APP.exe --seed` dintr-un Command Prompt deschis în folderul aplicației. Te autentifici cu noul cont și, dacă vrei, dezactivezi contul vechi din **Utilizatori**. |
 
 Opțiuni avansate:
 - `Concediu-APP.exe --seed` reface datele inițiale (tipuri de concediu, sărbători) și se oprește. Atenție: suprascrie modificările făcute celor 5 tipuri de concediu implicite.

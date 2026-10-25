@@ -50,22 +50,150 @@ node --version      # trebuie să fie v22 sau v24
 
 ## 2. MongoDB
 
-**Varianta A: Docker** (cea mai simplă). Instalează Docker după [ghidul oficial](https://docs.docker.com/engine/install/). Pornirea MongoDB se face după pasul 3, când proiectul e descărcat:
+Aplicația merge cu **MongoDB 7 sau mai nou** (testată cu 7.0 și 9.0). Recomandat e pachetul oficial (2.1). Docker (2.5) e o alternativă.
+
+### 2.1 Instalare (pachetul oficial `mongodb-org`)
+
+**Ubuntu 24.04:**
+
+```bash
+sudo apt install -y gnupg curl
+curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | \
+  sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | \
+  sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+sudo apt update
+sudo apt install -y mongodb-org
+sudo systemctl enable --now mongod
+```
+
+- **Ubuntu 22.04:** înlocuiește `noble` cu `jammy`.
+- **Debian 12:** linia `echo` devine:
+  ```bash
+  echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/8.0 main" | \
+    sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+  ```
+- **Altă versiune:** exemplul instalează MongoDB 8.0. Pentru o versiune mai nouă, înlocuiește `8.0` peste tot și verifică [ghidul oficial](https://www.mongodb.com/docs/manual/administration/install-on-linux/).
+
+**Verificare:**
+
+```bash
+systemctl status mongod                               # active (running)
+mongosh --quiet --eval "db.runCommand({ ping: 1 })"   # { ok: 1 }
+```
+
+| Ce | Unde |
+|---|---|
+| Configurarea MongoDB | `/etc/mongod.conf` |
+| Datele | `/var/lib/mongodb` |
+| Jurnalul (pentru erori) | `/var/log/mongodb/mongod.log` |
+
+### 2.2 Configurare implicită (aplicația pe același server)
+
+MongoDB ascultă implicit doar local (`bindIp: 127.0.0.1` în `/etc/mongod.conf`), deci nu e accesibil din rețea. Fără parolă, conexiunea din `.env` (pasul 4) este:
+
+```ini
+MONGO_URI=mongodb://127.0.0.1:27017/concediu
+```
+
+Baza de date `concediu` se creează singură la `npm run seed`.
+
+### 2.3 Utilizator și parolă (recomandat)
+
+Fără parolă, orice proces de pe server poate citi și modifica datele. **Dacă MongoDB e accesibil din rețea (2.4), parola e obligatorie.**
+
+**1. Creează utilizatorii.** Deschide consola cu `mongosh`, apoi scrie pe rând:
+
+```js
+use admin
+db.createUser({ user: "admin", pwd: passwordPrompt(), roles: ["root"] })
+
+use concediu
+db.createUser({ user: "concediu", pwd: passwordPrompt(), roles: [{ role: "readWrite", db: "concediu" }] })
+
+exit
+```
+
+- `passwordPrompt()` îți cere parola fără s-o afișeze.
+- `admin` e administratorul MongoDB, pentru întreținere și backup.
+- `concediu` e utilizatorul aplicației și are drepturi doar pe baza `concediu`.
+- Folosește parole din litere și cifre: caracterele `@ : / ? # %` trebuie codificate în `MONGO_URI`.
+
+O parolă potrivită se generează cu `openssl rand -hex 16`.
+
+**2. Pornește verificarea parolei** cu `sudo nano /etc/mongod.conf`. Înlocuiește linia `#security:` cu:
+
+```yaml
+security:
+  authorization: enabled
+```
+
+`authorization` are în față exact **2 spații**, nu tab.
+
+**3. Repornește MongoDB și testează:**
+
+```bash
+sudo systemctl restart mongod
+mongosh "mongodb://concediu:PAROLA@127.0.0.1:27017/concediu" --quiet --eval "db.runCommand({ ping: 1 })"
+```
+
+**4. Pune utilizatorul în `.env`** (pasul 4):
+
+```ini
+MONGO_URI=mongodb://concediu:PAROLA@127.0.0.1:27017/concediu
+```
+
+### 2.4 MongoDB pe alt server (acces din rețea)
+
+Pașii se fac **pe serverul cu MongoDB**, după [2.3](#23-utilizator-și-parolă-recomandat). Nu deschide niciodată MongoDB spre rețea fără parolă. În exemplu, serverul cu MongoDB are IP-ul `192.168.1.50`, iar cel cu aplicația `192.168.1.20`.
+
+**1. Ascultă și pe IP-ul din rețea.** În `/etc/mongod.conf`, secțiunea `net` devine:
+
+```yaml
+net:
+  port: 27017
+  bindIp: 127.0.0.1,192.168.1.50
+```
+
+**2. Repornește MongoDB și permite în firewall doar serverul aplicației:**
+
+```bash
+sudo systemctl restart mongod
+sudo ufw allow from 192.168.1.20 to any port 27017 proto tcp
+```
+
+**Pe serverul aplicației**, în `.env`:
+
+```ini
+MONGO_URI=mongodb://concediu:PAROLA@192.168.1.50:27017/concediu
+```
+
+### 2.5 Alternativă: MongoDB în Docker
+
+Instalează Docker după [ghidul oficial](https://docs.docker.com/engine/install/). Pornirea MongoDB se face după [pasul 3](#3-descărcarea-aplicației), când proiectul e descărcat:
 
 ```bash
 cd /opt/Concediu-APP/concediuBackend
-# Pune MongoDB doar pe localhost: în docker-compose.yml, linia de port devine "127.0.0.1:27017:27017"
+# Pune MongoDB doar pe localhost: linia de port devine "127.0.0.1:27017:27017"
 sudo sed -i 's/- "27017:27017"/- "127.0.0.1:27017:27017"/' docker-compose.yml
 sudo docker compose up -d
 ```
 
-**Varianta B: pachetul oficial `mongodb-org`.** Urmează [ghidul MongoDB pentru Ubuntu](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-ubuntu/) sau [pentru Debian](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-debian/), apoi:
+Conexiunea e aceeași ca la [2.2](#22-configurare-implicită-aplicația-pe-același-server): `MONGO_URI=mongodb://127.0.0.1:27017/concediu`.
 
-```bash
-sudo systemctl enable --now mongod
+Pentru parolă în Docker, adaugă în `docker-compose.yml`, sub `mongodb:`, **înainte de prima pornire** (volumul trebuie să fie gol):
+
+```yaml
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: PAROLA
 ```
 
-În ambele variante, MongoDB ascultă doar local (`127.0.0.1`), deci nu e accesibil din rețea. Așa trebuie să rămână: nu are parolă.
+Conexiunea devine:
+
+```ini
+MONGO_URI=mongodb://admin:PAROLA@127.0.0.1:27017/concediu?authSource=admin
+```
 
 ## 3. Descărcarea aplicației
 
@@ -99,6 +227,8 @@ JWT_REFRESH_SECRET=<al doilea secret>
 ADMIN_EMAIL=admin@firma-ta.ro
 ADMIN_PASSWORD=<o parolă inițială>
 ```
+
+Dacă ai pus parolă la MongoDB ([2.3](#23-utilizator-și-parolă-recomandat)), folosește `MONGO_URI=mongodb://concediu:PAROLA@127.0.0.1:27017/concediu`.
 
 **Serverul nu pornește** dacă secretele lipsesc, sunt cele din exemplu, au sub 32 de caractere sau sunt identice.
 
@@ -232,6 +362,8 @@ Restaurare:
 mongorestore --uri "mongodb://127.0.0.1:27017/concediu" --drop /var/backups/concediu/2026-10-25/concediu
 ```
 
+Dacă MongoDB are parolă ([2.3](#23-utilizator-și-parolă-recomandat)), folosește în comenzi utilizatorul `admin`: `--uri "mongodb://admin:PAROLA@127.0.0.1:27017/concediu?authSource=admin"`.
+
 `mongodump` și `mongorestore` vin cu pachetul `mongodb-database-tools`, din [repository-ul MongoDB](https://www.mongodb.com/docs/database-tools/installation/installation-linux/). Comenzile merg la fel și cu varianta Docker, pentru că MongoDB ascultă tot pe `127.0.0.1:27017`.
 
 Păstrează și o copie a fișierului `concediuBackend/.env`.
@@ -242,8 +374,12 @@ Păstrează și o copie a fișierului `concediuBackend/.env`.
 |---|---|
 | `systemctl status concediu` arată `failed` | Vezi cauza cu `sudo journalctl -u concediu -n 50`. |
 | În jurnal: `Insecure JWT configuration in .env` | Secretele JWT lipsesc sau sunt slabe. Vezi [pasul 4](#4-serverul-backend). |
-| În jurnal: `MongoDB connection error` | MongoDB nu rulează (`systemctl status mongod` sau `docker ps`) sau `MONGO_URI` e greșit. |
+| În jurnal: `MongoDB connection error ... ECONNREFUSED` | MongoDB nu rulează (`systemctl status mongod` sau `docker ps`) sau adresa din `MONGO_URI` e greșită. |
+| În jurnal: `MongoDB connection error ... Authentication failed` | Utilizator sau parolă greșite în `MONGO_URI`. Utilizatorul `concediu` de la [2.3](#23-utilizator-și-parolă-recomandat) e creat în baza `concediu`. Pentru unul creat în `admin`, adaugă `?authSource=admin`. |
+| În jurnal: `MongoDB requires a user with access to database "concediu"`, `requires authentication` sau `not authorized on concediu` | MongoDB cere parolă, dar `MONGO_URI` nu are utilizator și parolă, sau utilizatorul nu are drepturi pe baza `concediu`. Vezi [2.3](#23-utilizator-și-parolă-recomandat). |
+| `mongod` nu mai pornește după ce ai modificat `/etc/mongod.conf` | Greșeală de indentare: doar spații, câte 2. Cauza exactă: `sudo tail -n 30 /var/log/mongodb/mongod.log`. |
 | În jurnal: `EACCES` la citirea `.env` | Permisiunile lui `.env`. Vezi comenzile `chown`/`chmod` de la pasul 4. |
+| Ai uitat parola de admin | Aplicația nu are încă resetare de parolă. Creezi un administrator nou, fără să pierzi date: în `.env` pui un `ADMIN_EMAIL` nou (care nu există încă în aplicație) și un `ADMIN_PASSWORD`, apoi rulezi `sudo npm run seed` în `concediuBackend`. Te autentifici cu noul cont și dezactivezi contul vechi din **Utilizatori**. |
 | În browser: **502 Bad Gateway** | nginx merge, dar serverul Node.js nu. Verifică `systemctl status concediu`. |
 | În browser: **404** la reîncărcarea unei pagini (ex. `/leaves`) | Lipsește `try_files ... /index.html` din configurația nginx. Folosește `linux/nginx.conf`. |
 | Interfața se încarcă, dar login-ul dă eroare de rețea | Interfața a fost construită fără `npm run build`, adică nu în modul producție, și apelează portul 3000. Refă pasul 6. |

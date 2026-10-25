@@ -132,7 +132,7 @@ Dacă un angajat pleacă din firmă, **dezactivează-i contul** din Utilizatori.
 
 ## Dezvoltare
 
-Pentru programatori, pe Windows sau Linux. Ai nevoie de **Node.js 22 sau 24**, **Git** și **MongoDB 7**. MongoDB poate rula în Docker, cu `docker compose up -d` în `concediuBackend`, sau instalat local.
+Pentru programatori, pe Windows sau Linux. Ai nevoie de **Node.js 22 sau 24**, **Git** și **MongoDB 7 sau mai nou**. MongoDB poate rula în Docker, cu `docker compose up -d` în `concediuBackend`, sau instalat local. Instalarea și configurarea MongoDB sunt descrise pas cu pas în ghidul [Windows](windows/README.md#2-mongodb) și în cel [Linux](linux/README.md#2-mongodb).
 
 ```bash
 git clone https://github.com/servici2022-lang/Concediu-APP.git
@@ -201,5 +201,6 @@ Lucruri care funcționează, dar pe care merită să le ai în vedere:
 - **Calendarul** e vizibil tuturor angajaților și arată tipul concediului, inclusiv „Concediu medical”. Dacă vrei ca tipul să fie văzut doar de manageri și admini (date de sănătate, GDPR), e o modificare de făcut.
 - **Fusul orar.** Aplicația presupune că toți utilizatorii au fusul orar al României. Pe un calculator setat pe alt fus orar, datele pot apărea cu o zi decalate.
 - **Mesajele de eroare de la server** sunt în engleză, iar interfața e în română.
+- **Resetarea parolei.** Un administrator nu poate reseta din interfață parola altui utilizator. Fiecare își schimbă parola din **Profil**. Pentru un admin care și-a uitat parola, vezi problemele frecvente din ghidul [Windows](windows/README.md#9-probleme-frecvente) sau [Linux](linux/README.md#11-probleme-frecvente).
 - **MongoDB fără parolă.** Ține baza de date accesibilă doar local, cum e descris în ghidurile de instalare.
 - **Backend-ul nu are teste automate.** Frontend-ul are teste minimale (`npm test`).

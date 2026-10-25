@@ -11,6 +11,9 @@ DE CE AI NEVOIE
   Pe acest calculator îl poți instala cu (în PowerShell sau Command Prompt):
       winget install MongoDB.Server
   MongoDB pornește apoi automat, ca serviciu Windows, pe portul 27017.
+  Pentru parolă la MongoDB sau MongoDB pe alt calculator, vezi ghidul complet,
+  secțiunea „2. MongoDB”:
+      https://github.com/servici2022-lang/Concediu-APP/blob/main/windows/README.md
 
 PRIMA PORNIRE
   1. Copiază folderul într-un loc unde ai drept de scriere, de exemplu C:\ConcediuAPP
