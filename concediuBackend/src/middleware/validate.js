@@ -14,8 +14,10 @@ const validate = (validations) => {
       message: err.msg,
     }));
 
+    // Interfața afișează doar `message`, deci mesajul conține motivele concrete.
+    const reasons = [...new Set(extractedErrors.map((e) => e.message))];
     return res.status(422).json({
-      message: 'Validation failed',
+      message: reasons.join('; ') || 'Validation failed',
       errors: extractedErrors,
     });
   };

@@ -15,6 +15,10 @@ const logger = require('./utils/logger');
 
 const app = express();
 
+// În producție API-ul stă în spatele nginx (vezi nginx.conf). Fără asta, toate cererile
+// par să vină de la 127.0.0.1, iar limita de login se aplica tuturor utilizatorilor odată.
+app.set('trust proxy', 'loopback');
+
 // Security middleware
 app.use(helmet());
 app.use(
@@ -32,7 +36,7 @@ const limiter = rateLimit({
   max: 100,
   message: { message: 'Too many requests, please try again later' },
 });
-app.use('/api/auth/login', limiter);
+app.use(['/api/auth/login', '/api/auth/refresh-token', '/api/users/change-password'], limiter);
 
 // Body parsing
 app.use(express.json({ limit: '10kb' }));
@@ -62,12 +66,20 @@ app.use(errorHandler);
 
 // Start server
 const start = async () => {
+  config.assertSecureJwtSecrets();
   await connectDB();
-  app.listen(config.port, '0.0.0.0', () => {
+  app.listen(config.port, '0.0.0.0', (error) => {
+    if (error) {
+      logger.error(`Server could not start on port ${config.port}: ${error.message}`);
+      process.exit(1);
+    }
     logger.info(`Server running on port ${config.port} in ${config.env} mode`);
   });
 };
 
-start();
+start().catch((error) => {
+  logger.error(error.message);
+  process.exit(1);
+});
 
 module.exports = app;

@@ -1,14 +1,22 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { User } = require('../models');
 const AppError = require('../utils/AppError');
 
+// În baza de date se păstrează doar hash-ul refresh token-ului, nu token-ul însuși:
+// cine citește baza de date nu poate prelua sesiunile utilizatorilor.
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, config.jwt.secret, {
     expiresIn: config.jwt.expiresIn,
   });
+  // jwtid face fiecare refresh token unic, chiar dacă două sunt emise în aceeași secundă;
+  // altfel token-ul rotit era identic cu cel vechi, iar cel vechi rămânea valid.
   const refreshToken = jwt.sign({ id: userId }, config.jwt.refreshSecret, {
     expiresIn: config.jwt.refreshExpiresIn,
+    jwtid: crypto.randomUUID(),
   });
   return { accessToken, refreshToken };
 };
@@ -29,7 +37,7 @@ exports.login = async (req, res, next) => {
     const { accessToken, refreshToken } = generateTokens(user._id);
 
     // Store hashed refresh token
-    user.refreshToken = refreshToken;
+    user.refreshToken = hashToken(refreshToken);
     await user.save({ validateBeforeSave: false });
 
     res.json({
@@ -69,7 +77,7 @@ exports.register = async (req, res, next) => {
     });
 
     const { accessToken, refreshToken } = generateTokens(user._id);
-    user.refreshToken = refreshToken;
+    user.refreshToken = hashToken(refreshToken);
     await user.save({ validateBeforeSave: false });
 
     res.status(201).json({
@@ -98,7 +106,7 @@ exports.refreshToken = async (req, res, next) => {
     const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
     const user = await User.findById(decoded.id).select('+refreshToken');
 
-    if (!user || user.refreshToken !== refreshToken) {
+    if (!user || user.refreshToken !== hashToken(refreshToken)) {
       throw new AppError('Invalid refresh token', 401);
     }
 
@@ -107,13 +115,16 @@ exports.refreshToken = async (req, res, next) => {
     }
 
     const tokens = generateTokens(user._id);
-    user.refreshToken = tokens.refreshToken;
+    user.refreshToken = hashToken(tokens.refreshToken);
     await user.save({ validateBeforeSave: false });
 
     res.json(tokens);
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Refresh token expired' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid refresh token' });
     }
     next(error);
   }

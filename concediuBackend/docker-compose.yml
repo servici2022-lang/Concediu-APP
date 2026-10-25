@@ -3,6 +3,8 @@ services:
     image: mongo:7
     container_name: concediu-mongodb
     ports:
+      # MongoDB nu are parolă aici. Dacă backend-ul rulează pe același calculator,
+      # folosește "127.0.0.1:27017:27017", ca baza de date să nu fie accesibilă din rețea.
       - "27017:27017"
     volumes:
       - mongo-data:/data/db

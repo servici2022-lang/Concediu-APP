@@ -37,7 +37,7 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const leaveType = await LeaveType.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
     if (!leaveType) {
@@ -55,7 +55,7 @@ exports.delete = async (req, res, next) => {
     const leaveType = await LeaveType.findByIdAndUpdate(
       req.params.id,
       { isActive: false },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!leaveType) {
       throw new AppError('Leave type not found', 404);

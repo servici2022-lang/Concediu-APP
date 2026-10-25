@@ -25,4 +25,30 @@ const config = {
   },
 };
 
+/**
+ * Oprește pornirea serverului dacă secretele JWT lipsesc sau sunt slabe. Valorile din
+ * .env.example sunt publice în repo: cu ele oricine poate semna un token de admin.
+ */
+config.assertSecureJwtSecrets = () => {
+  const problems = [];
+  for (const [name, value] of [
+    ['JWT_SECRET', config.jwt.secret],
+    ['JWT_REFRESH_SECRET', config.jwt.refreshSecret],
+  ]) {
+    if (!value) problems.push(`${name} is missing`);
+    else if (value.startsWith('change-this') || value.length < 32) {
+      problems.push(`${name} is a placeholder or shorter than 32 characters`);
+    }
+  }
+  if (config.jwt.secret && config.jwt.secret === config.jwt.refreshSecret) {
+    problems.push('JWT_SECRET and JWT_REFRESH_SECRET must be different');
+  }
+  if (problems.length) {
+    throw new Error(
+      `Insecure JWT configuration in .env: ${problems.join('; ')}. ` +
+        `Generate secrets with: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
+    );
+  }
+};
+
 module.exports = config;

@@ -1,27 +1,32 @@
-const { Employee, User } = require('../models');
+const { Employee, User, LeaveRequest } = require('../models');
+const { ROLES } = require('../config/constants');
 const { getLeaveBalance } = require('../utils/leaveCalculator');
 const { startOfLocalDay } = require('../utils/dateUtils');
+const { assertCanAccessEmployee, employeeForViewer } = require('../utils/access');
+const { parsePagination, paginationMeta, escapeRegex } = require('../utils/query');
 const AppError = require('../utils/AppError');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, department, search } = req.query;
+    const { department, search } = req.query;
+    const pagination = parsePagination(req.query);
     const filter = {};
 
     if (department) filter.department = department;
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    let query = Employee.find(filter)
-      .populate('user', 'firstName lastName email role isActive')
-      .populate('manager', 'firstName lastName email')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
     // If manager, only show their direct reports
-    if (req.user.role === 'manager') {
+    if (req.user.role === ROLES.MANAGER) {
       filter.manager = req.user._id;
+    }
+
+    // Căutarea se face în baza de date, înainte de paginare: filtrată după paginare
+    // găsea doar angajații de pe pagina curentă.
+    if (search) {
+      const pattern = new RegExp(escapeRegex(search), 'i');
+      const userIds = await User.find({
+        $or: [{ firstName: pattern }, { lastName: pattern }, { email: pattern }],
+      }).distinct('_id');
+      filter.user = { $in: userIds };
     }
 
     const [employees, total] = await Promise.all([
@@ -29,31 +34,14 @@ exports.getAll = async (req, res, next) => {
         .populate('user', 'firstName lastName email role isActive')
         .populate('manager', 'firstName lastName email')
         .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit)),
+        .skip(pagination.skip)
+        .limit(pagination.limit),
       Employee.countDocuments(filter),
     ]);
 
-    // If search, filter populated results
-    let filtered = employees;
-    if (search) {
-      const s = search.toLowerCase();
-      filtered = employees.filter(
-        (e) =>
-          e.user?.firstName?.toLowerCase().includes(s) ||
-          e.user?.lastName?.toLowerCase().includes(s) ||
-          e.user?.email?.toLowerCase().includes(s)
-      );
-    }
-
     res.json({
-      data: filtered,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit)),
-      },
+      data: employees.map((e) => employeeForViewer(req.user, e)),
+      pagination: paginationMeta(pagination, total),
     });
   } catch (error) {
     next(error);
@@ -66,11 +54,9 @@ exports.getById = async (req, res, next) => {
       .populate('user', 'firstName lastName email role isActive')
       .populate('manager', 'firstName lastName email');
 
-    if (!employee) {
-      throw new AppError('Employee not found', 404);
-    }
+    assertCanAccessEmployee(req.user, employee);
 
-    res.json({ data: employee });
+    res.json({ data: employeeForViewer(req.user, employee) });
   } catch (error) {
     next(error);
   }
@@ -82,11 +68,9 @@ exports.getByUserId = async (req, res, next) => {
       .populate('user', 'firstName lastName email role isActive')
       .populate('manager', 'firstName lastName email');
 
-    if (!employee) {
-      throw new AppError('Employee profile not found', 404);
-    }
+    assertCanAccessEmployee(req.user, employee, 'Employee profile not found');
 
-    res.json({ data: employee });
+    res.json({ data: employeeForViewer(req.user, employee) });
   } catch (error) {
     next(error);
   }
@@ -101,6 +85,10 @@ exports.create = async (req, res, next) => {
     const user = await User.findById(userId);
     if (!user) {
       throw new AppError('User not found', 404);
+    }
+
+    if (manager && manager.toString() === userId.toString()) {
+      throw new AppError('An employee cannot be their own manager', 400);
     }
 
     // Check if employee profile already exists
@@ -135,6 +123,17 @@ exports.update = async (req, res, next) => {
   try {
     const { department, position, hireDate, manager, totalLeaveDays, phone, cnp } =
       req.body;
+
+    const current = await Employee.findById(req.params.id);
+    if (!current) {
+      throw new AppError('Employee not found', 404);
+    }
+
+    // Un angajat care e propriul manager și-ar putea aproba singur cererile.
+    if (manager && manager.toString() === current.user.toString()) {
+      throw new AppError('An employee cannot be their own manager', 400);
+    }
+
     const updateData = {};
 
     if (department) updateData.department = department;
@@ -146,7 +145,7 @@ exports.update = async (req, res, next) => {
     if (cnp !== undefined) updateData.cnp = cnp;
 
     const employee = await Employee.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate('user', 'firstName lastName email role isActive')
@@ -164,6 +163,16 @@ exports.update = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
+    // Un profil cu cereri de concediu nu se șterge: cererile ar rămâne fără angajat,
+    // iar anularea, exportul PDF și aprobarea lor ar da erori.
+    const hasRequests = await LeaveRequest.exists({ employee: req.params.id });
+    if (hasRequests) {
+      throw new AppError(
+        'This employee has leave requests and cannot be deleted. Deactivate their user account instead.',
+        409
+      );
+    }
+
     const employee = await Employee.findByIdAndDelete(req.params.id);
     if (!employee) {
       throw new AppError('Employee not found', 404);
@@ -180,9 +189,7 @@ exports.getBalance = async (req, res, next) => {
     const year = req.query.year ? parseInt(req.query.year) : null;
 
     const employee = await Employee.findById(id);
-    if (!employee) {
-      throw new AppError('Employee not found', 404);
-    }
+    assertCanAccessEmployee(req.user, employee);
 
     const balance = await getLeaveBalance(id, year);
 
@@ -208,7 +215,12 @@ exports.getBalance = async (req, res, next) => {
 
 exports.getAllBalances = async (req, res, next) => {
   try {
-    const employees = await Employee.find({})
+    // Managerul vede soldurile subordonaților și pe al lui, nu ale întregii firme.
+    const filter =
+      req.user.role === ROLES.MANAGER
+        ? { $or: [{ manager: req.user._id }, { user: req.user._id }] }
+        : {};
+    const employees = await Employee.find(filter)
       .populate('user', 'firstName lastName email isActive');
 
     const results = [];

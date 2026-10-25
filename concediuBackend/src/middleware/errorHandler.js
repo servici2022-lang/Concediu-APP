@@ -22,9 +22,13 @@ const errorHandler = (err, req, res, _next) => {
   }
 
   const statusCode = err.statusCode || 500;
+  const isDev = config.env === 'development';
+  // Erorile neprevăzute (500) nu-și trimit detaliile interne clientului în producție.
+  const message =
+    statusCode >= 500 && !isDev ? 'Internal server error' : err.message || 'Internal server error';
   res.status(statusCode).json({
-    message: err.message || 'Internal server error',
-    ...(config.env === 'development' && { stack: err.stack }),
+    message,
+    ...(isDev && { stack: err.stack }),
   });
 };
 

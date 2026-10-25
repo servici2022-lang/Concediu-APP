@@ -1,37 +1,26 @@
 const { User } = require('../models');
 const AppError = require('../utils/AppError');
+const { parsePagination, paginationMeta, escapeRegex } = require('../utils/query');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, role, isActive, search } = req.query;
+    const { role, isActive, search } = req.query;
+    const pagination = parsePagination(req.query);
 
     const filter = {};
     if (role) filter.role = role;
     if (isActive !== undefined) filter.isActive = isActive === 'true';
     if (search) {
-      filter.$or = [
-        { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ];
+      const pattern = new RegExp(escapeRegex(search), 'i');
+      filter.$or = [{ firstName: pattern }, { lastName: pattern }, { email: pattern }];
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
     const [users, total] = await Promise.all([
-      User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+      User.find(filter).sort({ createdAt: -1 }).skip(pagination.skip).limit(pagination.limit),
       User.countDocuments(filter),
     ]);
 
-    res.json({
-      data: users,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit)),
-      },
-    });
+    res.json({ data: users, pagination: paginationMeta(pagination, total) });
   } catch (error) {
     next(error);
   }
@@ -61,7 +50,7 @@ exports.update = async (req, res, next) => {
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const user = await User.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 
@@ -81,7 +70,7 @@ exports.delete = async (req, res, next) => {
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { isActive: false },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!user) {
@@ -104,6 +93,8 @@ exports.changePassword = async (req, res, next) => {
     }
 
     user.password = newPassword;
+    // Parola nouă închide și sesiunile existente: un refresh token furat nu mai merge.
+    user.refreshToken = null;
     await user.save();
 
     res.json({ message: 'Password changed successfully' });

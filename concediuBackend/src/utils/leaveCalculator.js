@@ -1,5 +1,6 @@
 const { Holiday } = require('../models');
 const { toDateKey, localDayAnchor, localYearRange } = require('./dateUtils');
+const AppError = require('./AppError');
 
 /**
  * Sărbătorile legale dintr-un interval, ca Map<'YYYY-MM-DD', nume>.
@@ -56,7 +57,7 @@ const calculateWorkingDays = async (startDate, endDate) => {
   const end = localDayAnchor(endDate);
 
   if (start > end) {
-    throw new Error('Start date must be before or equal to end date');
+    throw new AppError('Start date must be before or equal to end date', 400);
   }
 
   const holidays = await getHolidaysInRange(start, end);
@@ -111,21 +112,20 @@ const getDaysForYear = (hireDate, totalLeaveDays, year) => {
 };
 
 /**
- * Get used leave days (approved) for a calendar year.
+ * Zilele scăzute din sold într-un an calendaristic, pentru cererile cu statusurile date.
  */
-const getUsedDaysForYear = async (employeeId, year) => {
+const getDeductedDaysForYear = async (employeeId, year, statuses) => {
   const { LeaveRequest } = require('../models');
-  const { LEAVE_STATUS } = require('../config/constants');
 
   const { start: startOfYear, end: endOfYear } = localYearRange(year);
 
-  const approvedLeaves = await LeaveRequest.find({
+  const leaves = await LeaveRequest.find({
     employee: employeeId,
-    status: LEAVE_STATUS.APPROVED,
+    status: { $in: statuses },
     startDate: { $gte: startOfYear, $lte: endOfYear },
   }).populate('leaveType');
 
-  return approvedLeaves
+  return leaves
     .filter((l) => l.leaveType && l.leaveType.deductsFromAllowance)
     .reduce((sum, l) => sum + l.workingDays, 0);
 };
@@ -153,11 +153,16 @@ const getLeaveBalance = async (employeeId, year) => {
   // Days for current year (prorated if hired this year)
   const currentYearDays = getDaysForYear(hireDate, employee.totalLeaveDays, currentYear);
 
-  // Carryover: unused days from previous year
+  // Carryover: unused days from previous year. Cererile încă în așteptare din anul
+  // trecut contează și ele ca folosite, altfel aceleași zile ar putea fi rezervate
+  // o dată în anul trecut și încă o dată, prin report, în anul curent.
   let carryoverDays = 0;
   if (currentYear > hireYear) {
     const prevYearDays = getDaysForYear(hireDate, employee.totalLeaveDays, currentYear - 1);
-    const prevYearUsed = await getUsedDaysForYear(employeeId, currentYear - 1);
+    const prevYearUsed = await getDeductedDaysForYear(employeeId, currentYear - 1, [
+      LEAVE_STATUS.APPROVED,
+      LEAVE_STATUS.PENDING,
+    ]);
     carryoverDays = Math.max(0, prevYearDays - prevYearUsed);
   }
 

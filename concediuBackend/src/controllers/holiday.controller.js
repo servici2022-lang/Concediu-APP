@@ -51,7 +51,7 @@ exports.update = async (req, res, next) => {
     }
 
     const holiday = await Holiday.findByIdAndUpdate(req.params.id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
     if (!holiday) {
