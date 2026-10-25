@@ -1,0 +1,23 @@
+# Serviciul systemd pentru serverul Concediu APP (backend-ul Node.js).
+#
+# Instalare (presupune proiectul în /opt/Concediu-APP, vezi linux/README.md):
+#   sudo cp /opt/Concediu-APP/linux/concediu.service /etc/systemd/system/concediu.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now concediu
+#
+# Jurnal:  sudo journalctl -u concediu -f
+
+[Unit]
+Description=Concediu APP backend
+After=network.target mongod.service docker.service
+
+[Service]
+WorkingDirectory=/opt/Concediu-APP/concediuBackend
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=5
+User=www-data
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

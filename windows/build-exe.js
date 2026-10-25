@@ -2,26 +2,31 @@
  * Construiește varianta Windows a aplicației: interfața compilată și serverul,
  * împachetate cu Node.js într-un singur Concediu-APP.exe.
  *
- * Rulare (din concediuBackend):  npm run build:exe
- * Rezultat:                      ../release/windows/  (Concediu-APP.exe, config.env, CITESTE-MA.txt)
+ * Rulare:    cd concediuBackend && npm run build:exe   (sau, din rădăcină: node windows/build-exe.js)
+ * Rezultat:  release/windows/  (Concediu-APP.exe, config.env, CITESTE-MA.txt)
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { configTemplate } = require('../src/config/desktop');
 
-const backendDir = path.resolve(__dirname, '..');
-const appDir = path.resolve(backendDir, '..', 'concediuApp');
+const rootDir = path.resolve(__dirname, '..');
+const backendDir = path.join(rootDir, 'concediuBackend');
+const appDir = path.join(rootDir, 'concediuApp');
 const publicDir = path.join(backendDir, 'public');
-const outDir = path.resolve(backendDir, '..', 'release', 'windows');
+const outDir = path.join(rootDir, 'release', 'windows');
 const exePath = path.join(outDir, 'Concediu-APP.exe');
 // Versiunea de Node.js inclusă în exe
 const target = process.env.PKG_TARGET || 'node24-win-x64';
 
+const { configTemplate } = require(path.join(backendDir, 'src', 'config', 'desktop'));
+
 const run = (command, cwd) => {
-  console.log(`\n> ${command}   [${path.relative(path.resolve(backendDir, '..'), cwd) || '.'}]`);
+  console.log(`\n> ${command}   [${path.relative(rootDir, cwd) || '.'}]`);
   execSync(command, { cwd, stdio: 'inherit' });
 };
+
+// Dependențele serverului (inclusiv @yao-pkg/pkg), dacă build-ul e pornit direct din rădăcină
+if (!fs.existsSync(path.join(backendDir, 'node_modules'))) run('npm ci', backendDir);
 
 // 1. Interfața, build de producție (apelează API-ul la /api, pe aceeași adresă)
 if (!fs.existsSync(path.join(appDir, 'node_modules'))) run('npm ci', appDir);

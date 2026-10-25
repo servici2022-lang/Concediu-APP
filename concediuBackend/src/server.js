@@ -21,7 +21,7 @@ const { seedDatabase, ensureMovableHolidays } = require('./seeds/seed');
 
 const app = express();
 
-// În producție API-ul stă în spatele nginx (vezi nginx.conf). Fără asta, toate cererile
+// Pe Linux API-ul stă în spatele nginx (vezi linux/nginx.conf). Fără asta, toate cererile
 // par să vină de la 127.0.0.1, iar limita de login se aplica tuturor utilizatorilor odată.
 app.set('trust proxy', 'loopback');
 
@@ -63,8 +63,8 @@ app.get('/api/health', (req, res) => {
 // API routes
 app.use('/api', routes);
 
-// Interfața compilată, când e împachetată împreună cu serverul (varianta .exe, vezi
-// scripts/build-exe.js). Pe server o servește nginx, iar folderul public/ nu există.
+// Interfața compilată, când e împachetată împreună cu serverul (varianta Windows .exe,
+// vezi windows/build-exe.js). Pe Linux o servește nginx, iar folderul public/ nu există.
 const publicDir = path.join(__dirname, '..', 'public');
 const indexHtml = path.join(publicDir, 'index.html');
 if (fs.existsSync(indexHtml)) {
