@@ -19,7 +19,9 @@ export class HolidayFormComponent implements OnInit {
   loading = signal(false);
 
   constructor(private fb: FormBuilder, private leaveService: LeaveService, private route: ActivatedRoute, private router: Router, private toastr: NbToastrService) {
-    this.form = this.fb.group({ name: ['', Validators.required], date: ['', Validators.required], recurring: [true] });
+    // Implicit nu se repetă: o sărbătoare cu dată variabilă (Paște, Rusalii) marcată din greșeală
+    // ca anuală ar deveni zi liberă în aceeași zi a fiecărui an.
+    this.form = this.fb.group({ name: ['', Validators.required], date: ['', Validators.required], recurring: [false] });
   }
 
   ngOnInit(): void {

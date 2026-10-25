@@ -2,7 +2,6 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersF
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { NbThemeModule, NbLayoutModule, NbSidebarModule, NbMenuModule, NbToastrModule, NbDialogModule, NbDatepickerModule } from '@nebular/theme';
 import { NbEvaIconsModule } from '@nebular/eva-icons';
 
@@ -15,7 +14,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
-    provideClientHydration(withEventReplay()),
     importProvidersFrom(
       NbThemeModule.forRoot({ name: 'cosmic' }),
       NbLayoutModule,

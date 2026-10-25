@@ -17,4 +17,9 @@ h4 {
   margin-bottom: 16px;
 
   strong { font-size: 1.3rem; }
+
+  &.wd-warning {
+    background: rgba(255, 170, 0, 0.08);
+    border-color: rgba(255, 170, 0, 0.2);
+  }
 }

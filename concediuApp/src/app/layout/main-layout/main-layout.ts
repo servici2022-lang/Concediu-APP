@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet, Router } from '@angular/router';
 import { UpperCasePipe } from '@angular/common';
 import { NbLayoutModule, NbSidebarModule, NbSidebarService, NbMenuModule, NbMenuService, NbButtonModule, NbIconModule, NbUserModule, NbContextMenuModule, NbMenuItem } from '@nebular/theme';
@@ -18,6 +19,7 @@ export class MainLayoutComponent implements OnInit {
   private sidebarService = inject(NbSidebarService);
   private menuService = inject(NbMenuService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   user = this.auth.currentUser;
 
@@ -44,7 +46,9 @@ export class MainLayoutComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.menuService.onItemClick().pipe(filter(({ tag }) => tag === 'user-menu'), map(({ item }) => item.title)).subscribe((title) => {
+    // onItemClick() e un stream global: fără dezabonare, după fiecare logout/login se aduna
+    // încă un handler, iar „Deconectare” trimitea mai multe cereri de logout.
+    this.menuService.onItemClick().pipe(filter(({ tag }) => tag === 'user-menu'), map(({ item }) => item.title), takeUntilDestroyed(this.destroyRef)).subscribe((title) => {
       if (title === 'Deconectare') this.auth.logout();
       else if (title === 'Profil') this.router.navigate(['/profile']);
     });

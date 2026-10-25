@@ -20,15 +20,15 @@
             <td>{{ r.workingDays }}</td>
             <td><span class="status-badge" [ngClass]="'status-' + r.status">{{ getStatusLabel(r.status) }}</span></td>
             <td>
-              @if (isManager && r.status === 'pending') {
-                <button nbButton ghost status="success" size="tiny" (click)="approve(r._id)"><nb-icon icon="checkmark-circle-outline"></nb-icon></button>
-                <button nbButton ghost status="danger" size="tiny" (click)="reject(r._id)"><nb-icon icon="close-circle-outline"></nb-icon></button>
+              @if (canDecide(r)) {
+                <button nbButton ghost status="success" size="tiny" (click)="approve(r._id)" [disabled]="busyId() === r._id" title="Aproba" aria-label="Aproba cererea"><nb-icon icon="checkmark-circle-outline"></nb-icon></button>
+                <button nbButton ghost status="danger" size="tiny" (click)="reject(r._id)" [disabled]="busyId() === r._id" title="Respinge" aria-label="Respinge cererea"><nb-icon icon="close-circle-outline"></nb-icon></button>
               }
               @if (r.status === 'approved') {
-                <button nbButton ghost status="info" size="tiny" (click)="exportPdf(r._id)" title="Exporta PDF"><nb-icon icon="download-outline"></nb-icon></button>
+                <button nbButton ghost status="info" size="tiny" (click)="exportPdf(r._id)" title="Exporta PDF" aria-label="Exporta PDF"><nb-icon icon="download-outline"></nb-icon></button>
               }
-              @if (r.status === 'pending' || r.status === 'approved') {
-                <button nbButton ghost size="tiny" (click)="cancel(r._id)"><nb-icon icon="slash-outline"></nb-icon></button>
+              @if (canCancel(r)) {
+                <button nbButton ghost size="tiny" (click)="cancel(r._id)" [disabled]="busyId() === r._id" title="Anuleaza" aria-label="Anuleaza cererea"><nb-icon icon="slash-outline"></nb-icon></button>
               }
             </td>
           </tr>

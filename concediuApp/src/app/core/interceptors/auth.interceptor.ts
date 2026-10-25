@@ -1,60 +1,47 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError, filter, take } from 'rxjs';
+import { catchError, switchMap, throwError, filter, take, finalize } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+
+const withBearer = (req: HttpRequest<unknown>, token: string | null) =>
+  token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+
+// Doar login și refresh-token merg fără token și fără refresh. Restul rutelor /auth/
+// (register, logout, me) au nevoie de ambele: altfel un admin care crea un utilizator
+// după o oră de inactivitate primea doar „Token expired”.
+const isPublicAuthCall = (url: string) => /\/auth\/(login|refresh-token)$/.test(url);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  const token = auth.getToken();
 
-  // Skip auth header for login and refresh endpoints
-  if (req.url.includes('/auth/login') || req.url.includes('/auth/refresh-token')) {
+  if (isPublicAuthCall(req.url)) {
     return next(req);
   }
 
-  let authReq = req;
-  if (token) {
-    authReq = req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` },
-    });
-  }
-
-  return next(authReq).pipe(
+  return next(withBearer(req, auth.getToken())).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/')) {
-        // Try refresh token
-        if (!auth.isRefreshing$.value) {
-          auth.isRefreshing$.next(true);
-          return auth.refreshToken().pipe(
-            switchMap((tokens) => {
-              auth.isRefreshing$.next(false);
-              const retryReq = req.clone({
-                setHeaders: { Authorization: `Bearer ${tokens.accessToken}` },
-              });
-              return next(retryReq);
-            }),
-            catchError((refreshError) => {
-              auth.isRefreshing$.next(false);
-              auth.logout();
-              return throwError(() => refreshError);
-            }),
-          );
-        } else {
-          // Wait for the refresh to complete
-          return auth.isRefreshing$.pipe(
-            filter((refreshing) => !refreshing),
-            take(1),
-            switchMap(() => {
-              const newToken = auth.getToken();
-              const retryReq = req.clone({
-                setHeaders: { Authorization: `Bearer ${newToken}` },
-              });
-              return next(retryReq);
-            }),
-          );
-        }
+      if (error.status !== 401 || !auth.getRefreshToken()) {
+        return throwError(() => error);
       }
-      return throwError(() => error);
+
+      // Primul 401 pornește refresh-ul; cererile care pică între timp îl așteaptă.
+      if (!auth.isRefreshing$.value) {
+        auth.isRefreshing$.next(true);
+        return auth.refreshToken().pipe(
+          // Dacă refresh-ul eșuează, refreshToken() închide singur sesiunea și duce la login.
+          finalize(() => auth.isRefreshing$.next(false)),
+          switchMap((tokens) => next(withBearer(req, tokens.accessToken))),
+        );
+      }
+
+      return auth.isRefreshing$.pipe(
+        filter((refreshing) => !refreshing),
+        take(1),
+        switchMap(() => {
+          const token = auth.getToken();
+          return token ? next(withBearer(req, token)) : throwError(() => error);
+        }),
+      );
     }),
   );
 };

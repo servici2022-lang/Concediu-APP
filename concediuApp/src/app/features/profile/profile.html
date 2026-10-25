@@ -21,7 +21,7 @@
     <nb-card-body>
       <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
         <div class="form-group"><label class="label">Parola curenta</label><input nbInput fullWidth formControlName="currentPassword" type="password" /></div>
-        <div class="form-group"><label class="label">Parola noua</label><input nbInput fullWidth formControlName="newPassword" type="password" /></div>
+        <div class="form-group"><label class="label">Parola noua</label><input nbInput fullWidth formControlName="newPassword" type="password" [status]="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.invalid ? 'danger' : 'basic'" /><p class="caption field-hint">{{ passwordHint }}</p></div>
         <button nbButton status="primary" type="submit" [disabled]="passwordForm.invalid || loading()">Schimba Parola</button>
       </form>
     </nb-card-body>

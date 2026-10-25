@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { UserService } from '../../core/services/user.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { Employee, LeaveBalance } from '../../core/models';
+import { PASSWORD_HINT, passwordValidators } from '../../core/utils/password';
 
 @Component({
   selector: 'app-profile',
@@ -24,10 +25,11 @@ export class ProfileComponent implements OnInit {
   employee = signal<Employee | null>(null);
   balance = signal<LeaveBalance | null>(null);
   loading = signal(false);
+  readonly passwordHint = PASSWORD_HINT;
 
   passwordForm = this.fb.group({
     currentPassword: ['', Validators.required],
-    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    newPassword: ['', passwordValidators],
   });
 
   ngOnInit(): void {
@@ -47,7 +49,8 @@ export class ProfileComponent implements OnInit {
     if (this.passwordForm.invalid) return;
     this.loading.set(true);
     this.userService.changePassword(this.passwordForm.value as any).subscribe({
-      next: () => { this.toastr.success('Parola a fost schimbata', 'Succes'); this.passwordForm.reset(); this.loading.set(false); },
+      // Serverul închide toate sesiunile la schimbarea parolei, deci utilizatorul se autentifică din nou.
+      next: () => { this.toastr.success('Parola a fost schimbata. Autentifica-te cu parola noua.', 'Succes'); this.loading.set(false); this.auth.logout(); },
       error: (err) => { this.loading.set(false); this.toastr.danger(err.error?.message || 'Eroare', 'Eroare'); },
     });
   }

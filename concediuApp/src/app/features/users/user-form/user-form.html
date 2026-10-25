@@ -3,7 +3,7 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="row"><div class="form-group"><label class="label">Prenume</label><input nbInput fullWidth formControlName="firstName" /></div><div class="form-group"><label class="label">Nume</label><input nbInput fullWidth formControlName="lastName" /></div></div>
     <div class="form-group"><label class="label">Email</label><input nbInput fullWidth formControlName="email" type="email" /></div>
-    @if (!isEdit()) { <div class="form-group"><label class="label">Parola</label><input nbInput fullWidth formControlName="password" type="password" /></div> }
+    @if (!isEdit()) { <div class="form-group"><label class="label">Parola</label><input nbInput fullWidth formControlName="password" type="password" [status]="form.get('password')?.touched && form.get('password')?.invalid ? 'danger' : 'basic'" /><p class="caption field-hint">{{ passwordHint }}</p></div> }
     <div class="row">
       <div class="form-group"><label class="label">Rol</label><nb-select fullWidth formControlName="role"><nb-option value="employee">Angajat</nb-option><nb-option value="manager">Manager</nb-option><nb-option value="admin">Administrator</nb-option></nb-select></div>
       @if (isEdit()) { <div class="form-group" style="padding-top:24px"><nb-toggle formControlName="isActive">Cont activ</nb-toggle></div> }

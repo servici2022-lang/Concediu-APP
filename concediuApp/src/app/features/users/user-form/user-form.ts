@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NbCardModule, NbInputModule, NbSelectModule, NbButtonModule, NbIconModule, NbToggleModule, NbToastrService } from '@nebular/theme';
 import { UserService } from '../../../core/services/user.service';
+import { PASSWORD_HINT, passwordValidators } from '../../../core/utils/password';
 
 @Component({
   selector: 'app-user-form',
@@ -16,9 +17,10 @@ export class UserFormComponent implements OnInit {
   isEdit = signal(false);
   userId = '';
   loading = signal(false);
+  readonly passwordHint = PASSWORD_HINT;
 
   constructor(private fb: FormBuilder, private userService: UserService, private route: ActivatedRoute, private router: Router, private toastr: NbToastrService) {
-    this.form = this.fb.group({ email: ['', [Validators.required, Validators.email]], password: ['', [Validators.required, Validators.minLength(8)]], firstName: ['', Validators.required], lastName: ['', Validators.required], role: ['employee', Validators.required], isActive: [true] });
+    this.form = this.fb.group({ email: ['', [Validators.required, Validators.email]], password: ['', passwordValidators], firstName: ['', Validators.required], lastName: ['', Validators.required], role: ['employee', Validators.required], isActive: [true] });
   }
 
   ngOnInit(): void {
