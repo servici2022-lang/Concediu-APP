@@ -4,3 +4,6 @@ dist/
 .DS_Store
 *.log
 
+# Varianta Windows (.exe): interfața copiată în backend și rezultatul build-ului
+concediuBackend/public/
+release/

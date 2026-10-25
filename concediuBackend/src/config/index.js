@@ -1,6 +1,20 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+const { prepareDesktopConfig } = require('./desktop');
+
+// Varianta Windows (.exe, împachetată cu pkg) citește setările din config.env de lângă
+// executabil și îl creează la prima pornire. Altfel, ca pe server, din .env-ul din folderul curent.
+const isDesktop = Boolean(process.pkg);
+const configFile =
+  process.env.CONCEDIU_CONFIG ||
+  (isDesktop ? path.join(path.dirname(process.execPath), 'config.env') : path.resolve('.env'));
+if (isDesktop) prepareDesktopConfig(configFile);
+dotenv.config({ path: configFile, quiet: isDesktop });
 
 const config = {
+  desktop: isDesktop,
+  configFile,
+  openBrowser: process.env.OPEN_BROWSER !== 'false',
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 3000,
 

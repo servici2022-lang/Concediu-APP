@@ -1,0 +1,51 @@
+CONCEDIU APP - varianta Windows
+===============================
+
+Conținutul folderului:
+  Concediu-APP.exe   aplicația (server + interfață), nu necesită instalare
+  config.env         configurarea: conexiunea la baza de date, portul etc.
+  CITESTE-MA.txt     acest fișier
+
+DE CE AI NEVOIE
+  MongoDB, pe acest calculator sau pe altul din rețea.
+  Pe acest calculator îl poți instala cu (în PowerShell sau Command Prompt):
+      winget install MongoDB.Server
+  MongoDB pornește apoi automat, ca serviciu Windows, pe portul 27017.
+
+PRIMA PORNIRE
+  1. Copiază folderul într-un loc unde ai drept de scriere, de exemplu C:\ConcediuAPP
+     (nu în C:\Program Files).
+  2. Deschide config.env cu Notepad și verifică MONGO_URI:
+       - MongoDB pe acest calculator: lasă  mongodb://localhost:27017/concediu
+       - MongoDB pe alt calculator:   mongodb://IP-ul-lui:27017/concediu
+     Salvează fișierul.
+  3. Pornește Concediu-APP.exe (dublu-click).
+     - Dacă Windows afișează „Windows protected your PC”: More info -> Run anyway.
+     - Dacă Windows Firewall întreabă, permite accesul pe rețele private,
+       ca să poată intra și colegii.
+  4. Se deschide browserul la http://localhost:3000.
+     Autentificare: admin@concediu.ro / Admin123!
+     Schimbă parola imediat: meniul din dreapta sus -> Profil.
+
+  La prima pornire, pe o bază de date goală, aplicația creează singură contul de
+  administrator, tipurile de concediu și sărbătorile legale.
+
+FOLOSIRE ZILNICĂ
+  - Aplicația merge cât timp fereastra Concediu-APP.exe e deschisă.
+    Pentru oprire, închide fereastra.
+  - Colegii din rețea intră la adresa afișată în fereastră, de forma
+    http://192.168.x.x:3000
+  - Configurarea se face doar din config.env. După orice modificare, repornește
+    aplicația.
+
+PORNIRE AUTOMATĂ ODATĂ CU WINDOWS (opțional)
+  Apasă Win+R, scrie  shell:startup  și apasă Enter. În folderul deschis
+  pune o scurtătură (shortcut) către Concediu-APP.exe.
+
+PROBLEME FRECVENTE
+  „MongoDB connection error”  -> MongoDB nu rulează sau MONGO_URI din config.env
+                                 e greșit.
+  „Port 3000 is used”         -> alt program folosește portul. Schimbă PORT în
+                                 config.env, de exemplu PORT=3001.
+  Fereastra se închide imediat -> pornește aplicația dintr-un Command Prompt
+                                 deschis în acest folder, ca să vezi mesajul.

@@ -19,14 +19,15 @@ Zilele lucrătoare se calculează automat: weekendurile și sărbătorile legale
 ## Cuprins
 
 1. [Ce poate face aplicația](#ce-poate-face-aplicația)
-2. [Cerințe](#cerințe)
-3. [Instalare pe calculatorul tău (dezvoltare și test)](#instalare-pe-calculatorul-tău-dezvoltare-și-test)
-4. [Instalare pe un server (producție)](#instalare-pe-un-server-producție)
-5. [Actualizarea unei instalări existente](#actualizarea-unei-instalări-existente)
-6. [Ghid de utilizare](#ghid-de-utilizare)
-7. [Cum se calculează zilele de concediu](#cum-se-calculează-zilele-de-concediu)
-8. [Probleme frecvente](#probleme-frecvente)
-9. [Limitări cunoscute](#limitări-cunoscute)
+2. [Varianta Windows (.exe), cea mai simplă](#varianta-windows-exe-cea-mai-simplă)
+3. [Cerințe](#cerințe)
+4. [Instalare pe calculatorul tău (dezvoltare și test)](#instalare-pe-calculatorul-tău-dezvoltare-și-test)
+5. [Instalare pe un server (producție)](#instalare-pe-un-server-producție)
+6. [Actualizarea unei instalări existente](#actualizarea-unei-instalări-existente)
+7. [Ghid de utilizare](#ghid-de-utilizare)
+8. [Cum se calculează zilele de concediu](#cum-se-calculează-zilele-de-concediu)
+9. [Probleme frecvente](#probleme-frecvente)
+10. [Limitări cunoscute](#limitări-cunoscute)
 
 ---
 
@@ -50,6 +51,70 @@ Zilele lucrătoare se calculează automat: weekendurile și sărbătorile legale
 | **Angajat** | Își trimite cererile, le anulează cât timp concediul n-a început, își descarcă PDF-urile, vede calendarul și își schimbă parola. |
 | **Manager** | Tot ce poate un angajat. În plus vede și aprobă sau respinge cererile **subordonaților direcți** și vede soldurile echipei. Nu își poate aproba propria cerere. |
 | **Administrator** | Tot. Gestionează utilizatorii, profilurile de angajat, tipurile de concediu și sărbătorile. Poate anula și un concediu aprobat care a început deja. |
+
+---
+
+## Varianta Windows (.exe), cea mai simplă
+
+Toată aplicația, serverul și interfața, e într-un singur fișier, **`Concediu-APP.exe`**. Nu trebuie să instalezi Node.js. Setările stau într-un fișier text, **`config.env`**, aflat lângă exe.
+
+| Fișier | Rol |
+|---|---|
+| `Concediu-APP.exe` | Aplicația. Pornește cu dublu-click. |
+| `config.env` | Configurarea: conexiunea la MongoDB, portul și contul de admin creat la prima pornire. |
+| `CITESTE-MA.txt` | Instrucțiuni scurte |
+
+**Ai nevoie doar de MongoDB**, pe același calculator sau pe altul din rețea. Pe același calculator îl instalezi cu `winget install MongoDB.Server`. Pornește apoi singur, ca serviciu Windows.
+
+### Pornire
+
+1. Copiază folderul cu cele 3 fișiere într-un loc unde ai drept de scriere, de exemplu `C:\ConcediuAPP`. Nu în `C:\Program Files`.
+2. Deschide `config.env` cu Notepad și setează **`MONGO_URI`**:
+   ```ini
+   # MongoDB pe același calculator
+   MONGO_URI=mongodb://localhost:27017/concediu
+   # MongoDB pe alt calculator din rețea
+   MONGO_URI=mongodb://192.168.1.50:27017/concediu
+   # cu utilizator și parolă
+   MONGO_URI=mongodb://utilizator:parola@192.168.1.50:27017/concediu?authSource=admin
+   ```
+   Păstrează o singură linie `MONGO_URI` activă; pune `#` în fața celorlalte.
+3. Pornește `Concediu-APP.exe`. Se deschide browserul la `http://localhost:3000`. Te autentifici cu `admin@concediu.ro` / `Admin123!` și schimbi parola din **Profil**.
+4. Colegii din rețea intră la adresa afișată în fereastra aplicației, de forma `http://192.168.x.x:3000`. La prima pornire, permite accesul când întreabă Windows Firewall.
+
+Ce face exe-ul singur:
+- **Secretele de securitate:** le generează în `config.env` la prima pornire.
+- **Baza de date goală:** creează contul de admin, tipurile de concediu și sărbătorile legale.
+- **Sărbătorile anilor noi:** la fiecare pornire adaugă Paștele și Rusaliile pentru anii care lipsesc.
+
+Aplicația merge cât timp fereastra e deschisă. Ca să pornească odată cu Windows, pune o scurtătură către exe în folderul `shell:startup` (Win+R → `shell:startup`).
+
+Exe-ul nu e semnat digital. Windows SmartScreen sau antivirusul pot afișa un avertisment la prima pornire. Alege **More info → Run anyway**.
+
+### Actualizare
+
+Înlocuiește doar `Concediu-APP.exe` cu versiunea nouă. Păstrează `config.env`: în el sunt setările și secretele.
+
+### Construirea exe-ului din codul sursă
+
+Pe un calculator Windows cu Node.js 22 sau 24:
+
+```bash
+cd concediuBackend
+npm install
+npm run build:exe
+```
+
+Scriptul face pe rând:
+1. build-ul de producție al interfeței;
+2. copierea interfeței lângă server;
+3. împachetarea serverului, a interfeței și a Node.js cu [`@yao-pkg/pkg`](https://github.com/yao-pkg/pkg).
+
+Rezultatul e în **`release/windows/`**: `Concediu-APP.exe`, `config.env` (cu secretele goale, completate la prima pornire) și `CITESTE-MA.txt`. Copiază tot folderul pe calculatorul unde rulează aplicația.
+
+Comenzi utile pentru exe:
+- `Concediu-APP.exe --seed` completează din nou datele inițiale (tipuri de concediu, sărbători) și se oprește. Atenție: suprascrie modificările făcute tipurilor de concediu implicite.
+- Variabila de mediu `CONCEDIU_CONFIG=C:\cale\catre\alt.env` folosește alt fișier de configurare.
 
 ---
 

@@ -2,13 +2,19 @@ const mongoose = require('mongoose');
 const config = require('./index');
 const logger = require('../utils/logger');
 
+/** URI-ul de afișat în mesaje, fără parolă. */
+const safeUri = (uri) => uri.replace(/\/\/([^:/@]+):([^@/]+)@/, '//$1:****@');
+
 const connectDB = async () => {
   try {
-    await mongoose.connect(config.mongo.uri);
-    logger.info('MongoDB connected successfully');
+    // 10 secunde până la eroare (implicit 30), ca o adresă greșită să fie raportată repede.
+    await mongoose.connect(config.mongo.uri, { serverSelectionTimeoutMS: 10000 });
+    logger.info(`MongoDB connected: ${safeUri(config.mongo.uri)}`);
   } catch (error) {
-    logger.error('MongoDB connection error:', error.message);
-    process.exit(1);
+    throw new Error(
+      `MongoDB connection error (${safeUri(config.mongo.uri)}): ${error.message}. ` +
+        `Check that MongoDB is running and MONGO_URI in ${config.configFile}.`
+    );
   }
 };
 
